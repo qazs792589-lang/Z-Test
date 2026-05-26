@@ -1,0 +1,17 @@
+{
+  "name": "Z-Ledger 投資管理系統",
+  "short_name": "Z-Ledger",
+  "start_url": "/Z-Money-/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "description": "Premium Investment Management Dashboard",
+  "icons": [
+    {
+      "src": "pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

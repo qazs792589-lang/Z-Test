@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+:root {
+  /* Theme 1: Supreme Gold (Default) */
+  --bg-primary: #050505;
+  --bg-secondary: #111113;
+  --bg-tertiary: #1a1a1e;
+  --accent: #E5B80B;
+  --accent-glow: rgba(229, 184, 11, 0.4);
+  --success: #ff453a;
+  --danger: #32d74b;
+  --text-main: #ffffff;
+  --text-dim: #9ca3af;
+  --border: #27272a;
+}
+
+:root[data-theme="cyan"] {
+  /* Theme 2: Neon Cyan (霓虹藍) */
+  --bg-primary: #09090b;
+  --bg-secondary: #121214;
+  --bg-tertiary: #1a1a1e;
+  --accent: #00f2ff;
+  --accent-glow: rgba(0, 242, 255, 0.4);
+  --success: #ff4d4f; /* Red for profit */
+  --danger: #2eeb6b; /* Green for loss/buy */
+  --text-main: #f8fafc;
+  --text-dim: #94a3b8;
+  --border: #27272a;
+}
+
+:root[data-theme="ocean"] {
+  /* Theme 3: Deep Ocean (深海藍) */
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --accent: #38bdf8;
+  --accent-glow: rgba(56, 189, 248, 0.4);
+  --success: #f87171; /* Red for profit */
+  --danger: #34d399; /* Green for loss/buy */
+  --text-main: #f0f9ff;
+  --text-dim: #94a3b8;
+  --border: #27272a;
+}
+
+:root[data-theme="light"] {
+  /* Theme 4: Soft Gray Light (護眼柔和) */
+  --bg-primary: #e5e7eb; /* Soft neutral gray */
+  --bg-secondary: #f3f4f6; /* Lighter gray card */
+  --bg-tertiary: #d1d5db;
+  --accent: #2563eb;
+  --accent-glow: rgba(37, 99, 235, 0.2);
+  --success: #dc2626; /* Red for profit */
+  --danger: #059669; /* Green for loss/buy */
+  --text-main: #1f2937; /* Very dark gray, not black */
+  --text-dim: #4b5563;
+  --border: #d1d5db;
+}
+
+:root[data-theme="zen"] {
+  /* Theme 5: Japanese Zen (和風侘寂) */
+  --bg-primary: #f5f0e6; /* Washi paper beige */
+  --bg-secondary: #efe8db;
+  --bg-tertiary: #e6dfcf;
+  --accent: #1e50a2; /* Lapis Lazuli (瑠璃色) for maximum contrast */
+  --accent-glow: rgba(30, 80, 162, 0.2);
+  --success: #cc5c54; /* Japanese Vermilion for profit */
+  --danger: #3b7a57; /* Japanese Pine Green for loss/buy */
+  --text-main: #292524; /* Very dark brown/stone for high contrast */
+  --text-dim: #57534e; /* Clearer secondary text */
+  --border: #d4ccbd; /* Slightly darker border for clarity */
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg-primary)] text-[var(--bg-main)] font-sans antialiased;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+  }
+}
+
+@layer components {
+  .elegant-card {
+    @apply bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-3.5 md:p-5 relative;
+  }
+
+  .elegant-input {
+    @apply bg-[var(--bg-primary)] border border-[var(--border)] text-[var(--text-main)] placeholder:text-[var(--text-dim)] p-2 rounded font-mono w-full focus:outline-none focus:border-[var(--accent)] text-left;
+    -webkit-appearance: none;
+  }
+
+  /* Fix for mobile date inputs overlapping icons (the blue dot/calendar icon) */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  input[type="date"] {
+    min-height: 42px;
+    position: relative;
+    text-align: left;
+  }
+
+  /* Force left alignment for desktop Chrome/Safari date picker text */
+  input[type="date"]::-webkit-datetime-edit {
+    display: flex !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding-left: 0;
+  }
+
+  .elegant-label {
+    @apply block text-[11px] text-[var(--text-dim)] mb-1 uppercase tracking-wider;
+  }
+
+  .stat-box {
+    @apply bg-[var(--bg-tertiary)] p-4 rounded-lg border-l-4 border-[var(--accent)];
+  }
+}
+
+/* Custom Scrollbar for Dark Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Mobile Smoothness Utilities */
+.smooth-scroll-x {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.hardware-accel {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
