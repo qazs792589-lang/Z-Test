@@ -316,6 +316,38 @@ export default function App() {
     syncMarketPrices();
   }, []);
 
+  // 本地端自動存檔備份至硬碟 (僅在 localhost 運作)
+  useEffect(() => {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocal || transactions.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const fullData = {
+          transactions,
+          tickerOrder,
+          tickerMetadata,
+          netWorthEntries,
+          weeklyPrices,
+          theme,
+          marketData
+        };
+        const res = await fetch('/api/save-backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fullData)
+        });
+        if (res.ok) {
+          console.log('[自動備份] 已成功將最新交易與持倉備份同步至本地硬碟 JSON 檔');
+        }
+      } catch (err) {
+        console.warn('[自動備份] 同步至本地硬碟失敗:', err);
+      }
+    }, 2000); // 延遲 2 秒防抖，避免連續輸入交易時頻繁寫入
+
+    return () => clearTimeout(timer);
+  }, [transactions, tickerOrder, tickerMetadata, netWorthEntries, weeklyPrices, theme, marketData]);
+
   // 啟動時自動修正 LocalStorage 中被錯誤登錄為 5/26 的歷史股價 (因為 5/26 尚未收盤)
   useEffect(() => {
     const now = new Date();

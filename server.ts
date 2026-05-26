@@ -10,6 +10,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
+  app.use(express.json({ limit: "10mb" }));
   const PORT = 3001;
   const DATA_FILE = path.join(process.cwd(), "stock_prices.json");
 
@@ -49,6 +50,30 @@ async function startServer() {
   app.post("/api/refresh", async (req, res) => {
     await refreshPrices();
     res.json({ success: true });
+  });
+
+  app.post("/api/save-backup", (req, res) => {
+    try {
+      const backupData = req.body;
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `Z-Money-FullBackup-${dateStr}.json`;
+      const filePath = path.join(process.cwd(), filename);
+
+      // 刪除舊的備份檔案以保持乾淨
+      const files = fs.readdirSync(process.cwd());
+      files.forEach(f => {
+        if (f.startsWith('Z-Money-FullBackup-') && f.endsWith('.json')) {
+          fs.unlinkSync(path.join(process.cwd(), f));
+        }
+      });
+
+      fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
+      console.log(`[自動備份] 成功寫入備份檔: ${filename}`);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("[自動備份] 寫入失敗:", error.message);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.get("/api/chart/:ticker", async (req, res) => {
