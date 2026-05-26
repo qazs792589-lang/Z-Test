@@ -15,7 +15,7 @@ try {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/Z-Money-/',
+    base: '/Z-Test/',
     build: {
       outDir: 'dist',
     },
