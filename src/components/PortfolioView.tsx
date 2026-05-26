@@ -693,21 +693,22 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">大盤基準數據管理</h4>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 md:gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-end">
                 <div className="space-y-2">
                   <label className="elegant-label">記錄日期</label>
                   <input 
                     type="date" 
-                    className="elegant-input text-[10px] h-9 md:h-11 px-1 md:px-2"
+                    className="elegant-input text-xs sm:text-sm h-10 sm:h-12 px-2.5"
                     value={mDate}
                     onChange={(e) => setMDate(e.target.value)}
+                    style={{ colorScheme: 'dark' }}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="elegant-label">大盤點數</label>
                   <input 
                     type="number" 
-                    className="elegant-input text-[10px] h-9 md:h-11 px-1 md:px-2"
+                    className="elegant-input text-xs sm:text-sm h-10 sm:h-12 px-3"
                     placeholder="點數"
                     value={mPrice}
                     onChange={(e) => setMPrice(e.target.value)}
@@ -724,7 +725,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     setMPrice('');
                     alert('大盤數據已成功記錄！');
                   }}
-                  className="bg-[var(--accent)] text-[var(--bg-primary)] h-9 md:h-11 rounded-lg md:rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                  className="bg-[var(--accent)] text-[var(--bg-primary)] h-10 sm:h-12 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg w-full flex items-center justify-center cursor-pointer"
                 >
                   儲存
                 </button>
