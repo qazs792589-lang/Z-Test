@@ -1194,7 +1194,7 @@ export default function App() {
             title="點擊圖示切換主題風格"
           >
             <img
-              src="/Z-Money-/logo.png"
+              src="/Z-Test/logo.png"
               alt="Z-Ledger Logo"
               className={cn(
                 "h-10 md:h-12 object-contain rounded-md transition-all duration-300",

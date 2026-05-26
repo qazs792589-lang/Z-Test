@@ -1,7 +1,7 @@
 {
   "name": "Z-Ledger 投資管理系統",
   "short_name": "Z-Ledger",
-  "start_url": "/Z-Money-/",
+  "start_url": "/Z-Test/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",
