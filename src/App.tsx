@@ -262,8 +262,23 @@ export default function App() {
           
           setWeeklyPrices(prev => {
             let hasChanges = false;
-            const updatedList = [...prev];
             
+            // 1. 先更新已存在的日期之價格 (如果不同)
+            const updatedList = prev.map(wp => {
+              const serverPrice = data.prices[wp.ticker];
+              const date = (data.dates && data.dates[wp.ticker]) ? data.dates[wp.ticker] : twDateStr;
+              if (serverPrice !== undefined && wp.date === date) {
+                const numericPrice = Number(serverPrice);
+                if (!isNaN(numericPrice) && wp.price !== numericPrice) {
+                  console.log(`[股價同步] 更新 ${wp.ticker} 在 ${wp.date} 的收盤價: ${wp.price} -> ${numericPrice}`);
+                  hasChanges = true;
+                  return { ...wp, price: numericPrice };
+                }
+              }
+              return wp;
+            });
+            
+            // 2. 再補登不存在的價格
             Object.entries(data.prices).forEach(([ticker, price]) => {
               const numericPrice = Number(price);
               if (isNaN(numericPrice)) return;
@@ -272,7 +287,7 @@ export default function App() {
               const date = (data.dates && data.dates[ticker]) ? data.dates[ticker] : twDateStr;
               
               // 檢查該股票在該日期是否已登錄過價格
-              const exists = prev.some(wp => wp.ticker === ticker && wp.date === date);
+              const exists = updatedList.some(wp => wp.ticker === ticker && wp.date === date);
               if (!exists) {
                 console.log(`[股價同步] 自動為 ${ticker} 登錄歷史收盤價: 日期 ${date}, 價格 ${numericPrice}`);
                 updatedList.push({
@@ -1047,18 +1062,34 @@ export default function App() {
         prices: mergedPrices
       });
 
-      // 7. 自動補登至歷史收盤價中 (weeklyPrices)
+      // 7. 自動補登與更新歷史收盤價中 (weeklyPrices)
       let autoLogCount = 0;
       setWeeklyPrices(prev => {
         let hasChanges = false;
-        const updatedList = [...prev];
         
+        // 1. 先更新已存在的日期之價格 (如果不同)
+        const updatedList = prev.map(wp => {
+          const price = mergedPrices[wp.ticker];
+          const date = mergedDates[wp.ticker] || twDateStr;
+          if (price !== undefined && wp.date === date) {
+            const numericPrice = Number(price);
+            if (!isNaN(numericPrice) && wp.price !== numericPrice) {
+              console.log(`[手動更新] 更新 ${wp.ticker} 在 ${wp.date} 的價格: ${wp.price} -> ${numericPrice}`);
+              hasChanges = true;
+              autoLogCount++;
+              return { ...wp, price: numericPrice };
+            }
+          }
+          return wp;
+        });
+        
+        // 2. 再補登不存在的價格
         heldTickers.forEach(ticker => {
           const price = mergedPrices[ticker];
           const date = mergedDates[ticker] || twDateStr;
           if (price === undefined || isNaN(price)) return;
           
-          const exists = prev.some(wp => wp.ticker === ticker && wp.date === date);
+          const exists = updatedList.some(wp => wp.ticker === ticker && wp.date === date);
           if (!exists) {
             updatedList.push({ date, ticker, price: Number(price) });
             hasChanges = true;
@@ -1069,7 +1100,7 @@ export default function App() {
         // 永遠補登大盤
         if (mergedPrices['^TWII']) {
           const date = mergedDates['^TWII'] || twDateStr;
-          const exists = prev.some(wp => wp.ticker === '^TWII' && wp.date === date);
+          const exists = updatedList.some(wp => wp.ticker === '^TWII' && wp.date === date);
           if (!exists) {
             updatedList.push({ date, ticker: '^TWII', price: Number(mergedPrices['^TWII']) });
             hasChanges = true;
