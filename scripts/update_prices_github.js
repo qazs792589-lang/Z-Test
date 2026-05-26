@@ -82,6 +82,18 @@ function getHeldTickers(backupFilePath) {
   }
 }
 
+// 解析民國年日期格式 (如 1150525 -> 2026-05-25)
+function parseRocDate(rocDateStr) {
+  if (!rocDateStr) return null;
+  const clean = rocDateStr.trim();
+  if (clean.length !== 7) return null;
+  const yy = parseInt(clean.substring(0, 3), 10);
+  const mm = clean.substring(3, 5);
+  const dd = clean.substring(5, 7);
+  const year = yy + 1911;
+  return `${year}-${mm}-${dd}`;
+}
+
 // 獲取台股上市與上櫃 OpenAPI 的所有價格，並合併為 Map
 async function fetchAllTaiwanStockPrices() {
   const pricesMap = {};
@@ -95,8 +107,10 @@ async function fetchAllTaiwanStockPrices() {
       data.forEach(item => {
         const code = item.Code ? item.Code.trim() : '';
         const price = parseFloat(item.ClosingPrice);
+        const rawDate = item.Date ? item.Date.trim() : '';
+        const parsedDate = parseRocDate(rawDate);
         if (code && !isNaN(price)) {
-          pricesMap[code] = price;
+          pricesMap[code] = { price, date: parsedDate };
         }
       });
       console.log(`[股價更新] 成功載入上市股票收盤價: ${data.length} 檔`);
@@ -116,8 +130,10 @@ async function fetchAllTaiwanStockPrices() {
       data.forEach(item => {
         const code = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim() : '';
         const price = parseFloat(item.Close);
+        const rawDate = item.Date ? item.Date.trim() : '';
+        const parsedDate = parseRocDate(rawDate);
         if (code && !isNaN(price)) {
-          pricesMap[code] = price;
+          pricesMap[code] = { price, date: parsedDate };
         }
       });
       console.log(`[股價更新] 成功載入上櫃股票收盤價: ${data.length} 檔`);
@@ -163,34 +179,32 @@ async function fetchPriceFromYahoo(ticker) {
     symbol = `${ticker}.TW`;
   }
 
-  try {
-    console.log(`[股價更新] [Yahoo] 正在抓取: ${symbol}...`);
-    const quote = await yahooFinance.quote(symbol);
-    if (quote && quote.regularMarketPrice !== undefined) {
-      const marketTime = quote.regularMarketTime ? new Date(quote.regularMarketTime) : new Date();
-      // 使用 ISO 格式提取日期 (UTC 日期，適用於大部分交易所結算日)
-      const date = marketTime.toISOString().split('T')[0];
-      return { price: parseFloat(quote.regularMarketPrice), date };
-    }
-  } catch (err) {
-    if (/^\d+[A-Z]?$/.test(ticker)) {
-      const altSymbol = `${ticker}.TWO`;
-      try {
-        console.log(`[股價更新] [Yahoo] 重試上櫃代碼: ${altSymbol}...`);
-        const quoteAlt = await yahooFinance.quote(altSymbol);
-        if (quoteAlt && quoteAlt.regularMarketPrice !== undefined) {
-          const marketTimeAlt = quoteAlt.regularMarketTime ? new Date(quoteAlt.regularMarketTime) : new Date();
-          const date = marketTimeAlt.toISOString().split('T')[0];
-          return { price: parseFloat(quoteAlt.regularMarketPrice), date };
-        }
-      } catch (errAlt) {
-        console.error(`[股價更新] [Yahoo] 抓取 ${ticker} (TW 與 TWO) 皆失敗:`, errAlt.message);
+  const queryYahoo = async (sym) => {
+    try {
+      console.log(`[股價更新] [Yahoo] 正在抓取: ${sym}...`);
+      const quote = await yahooFinance.quote(sym);
+      if (quote && quote.regularMarketPrice !== undefined && quote.regularMarketPrice !== null) {
+        const marketTime = quote.regularMarketTime ? new Date(quote.regularMarketTime) : new Date();
+        const date = marketTime.toISOString().split('T')[0];
+        return { price: parseFloat(quote.regularMarketPrice), date };
       }
-    } else {
-      console.error(`[股價更新] [Yahoo] 抓取 ${ticker} 失敗:`, err.message);
+    } catch (err) {
+      console.warn(`[股價更新] [Yahoo] 抓取 ${sym} 發生錯誤:`, err.message);
     }
+    return null;
+  };
+
+  // 1. 嘗試抓取預設 Symbol (例如 .TW)
+  let result = await queryYahoo(symbol);
+  
+  // 2. 如果是台股且失敗了，重試 .TWO
+  if (result === null && /^\d+[A-Z]?$/.test(ticker) && symbol.endsWith('.TW')) {
+    const altSymbol = `${ticker}.TWO`;
+    console.log(`[股價更新] [Yahoo] 嘗試上櫃代碼: ${altSymbol}...`);
+    result = await queryYahoo(altSymbol);
   }
-  return null;
+
+  return result;
 }
 
 // 主程式
@@ -219,33 +233,57 @@ async function main() {
   let failCount = 0;
 
   for (const ticker of heldTickers) {
-    let updatedPrice = null;
-    let priceDate = null;
+    let openApiPrice = null;
+    let openApiDate = null;
 
-    // 1. 如果是台股優先從 OpenAPI Map 找價格
+    // 1. 嘗試從 OpenAPI 獲取台股價格與日期
     if (/^\d+[A-Z]?$/.test(ticker)) {
       if (twStockPrices[ticker] !== undefined) {
-        updatedPrice = twStockPrices[ticker];
-        priceDate = twTradingDate;
-        console.log(`[股價更新] [OpenAPI] ${ticker}: ${updatedPrice} (交易日期: ${priceDate})`);
+        openApiPrice = twStockPrices[ticker].price;
+        openApiDate = twStockPrices[ticker].date;
       }
     }
 
-    // 2. 如果 OpenAPI 沒找到，使用 Yahoo Finance 備援
-    if (updatedPrice === null) {
-      const yahooResult = await fetchPriceFromYahoo(ticker);
-      if (yahooResult !== null) {
-        updatedPrice = yahooResult.price;
-        priceDate = yahooResult.date;
-        console.log(`[股價更新] [Yahoo] ${ticker}: ${updatedPrice} (交易日期: ${priceDate})`);
-      }
+    // 2. 嘗試從 Yahoo Finance 獲取價格與日期
+    let yahooPrice = null;
+    let yahooDate = null;
+    const yahooResult = await fetchPriceFromYahoo(ticker);
+    if (yahooResult !== null) {
+      yahooPrice = yahooResult.price;
+      yahooDate = yahooResult.date;
     }
 
-    // 3. 更新至資料庫中
-    if (updatedPrice !== null) {
-      pricesDb.prices[ticker] = Number(updatedPrice.toFixed(2));
-      pricesDb.dates[ticker] = priceDate;
+    // 3. 比較並決定最終價格與日期 (如果 Yahoo 的日期比 OpenAPI 的日期更新，則採用 Yahoo 價格與日期)
+    let finalPrice = null;
+    let finalDate = null;
+    let source = '';
+
+    if (openApiPrice !== null && yahooPrice !== null) {
+      if (openApiDate && yahooDate && yahooDate > openApiDate) {
+        finalPrice = yahooPrice;
+        finalDate = yahooDate;
+        source = 'Yahoo (Newer)';
+      } else {
+        finalPrice = openApiPrice;
+        finalDate = openApiDate || yahooDate;
+        source = 'OpenAPI';
+      }
+    } else if (openApiPrice !== null) {
+      finalPrice = openApiPrice;
+      finalDate = openApiDate || twTradingDate;
+      source = 'OpenAPI (Only)';
+    } else if (yahooPrice !== null) {
+      finalPrice = yahooPrice;
+      finalDate = yahooDate;
+      source = 'Yahoo (Only)';
+    }
+
+    // 4. 更新至資料庫中
+    if (finalPrice !== null) {
+      pricesDb.prices[ticker] = Number(finalPrice.toFixed(2));
+      pricesDb.dates[ticker] = finalDate;
       successCount++;
+      console.log(`[股價更新] ${ticker}: ${finalPrice} (交易日期: ${finalDate}, 來源: ${source})`);
     } else {
       console.warn(`[股價更新] 無法獲取 ${ticker} 的最新價格，將保留歷史價格: ${pricesDb.prices[ticker] || '無'}`);
       failCount++;

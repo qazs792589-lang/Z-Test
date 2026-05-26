@@ -268,12 +268,15 @@ export default function App() {
               const numericPrice = Number(price);
               if (isNaN(numericPrice)) return;
               
+              // 優先使用該股票在資料庫中的實際交易日期
+              const date = (data.dates && data.dates[ticker]) ? data.dates[ticker] : twDateStr;
+              
               // 檢查該股票在該日期是否已登錄過價格
-              const exists = prev.some(wp => wp.ticker === ticker && wp.date === twDateStr);
+              const exists = prev.some(wp => wp.ticker === ticker && wp.date === date);
               if (!exists) {
-                console.log(`[股價同步] 自動為 ${ticker} 登錄歷史收盤價: 日期 ${twDateStr}, 價格 ${numericPrice}`);
+                console.log(`[股價同步] 自動為 ${ticker} 登錄歷史收盤價: 日期 ${date}, 價格 ${numericPrice}`);
                 updatedList.push({
-                  date: twDateStr,
+                  date: date,
                   ticker: ticker,
                   price: numericPrice
                 });
@@ -936,8 +939,163 @@ export default function App() {
     }, 50);
   };
 
-  const handleUpdateMarket = () => {
-    alert('自動更新市價功能已停用，請透過下方「每週收盤價登錄」功能手動匯入 CSV 或新增紀錄。');
+  const handleUpdateMarket = async () => {
+    console.log('[手動更新] 開始手動一鍵更新最新收盤價...');
+    
+    // 取得所有有持股的台股代號
+    const tickers = new Set();
+    transactions.forEach(tx => {
+      if (!tx.ticker) return;
+      const ticker = tx.ticker.trim().toUpperCase();
+      if (!['現金', 'CASH', 'TWD', 'USD'].includes(ticker)) {
+        tickers.add(ticker);
+      }
+    });
+    const heldTickers = Array.from(tickers) as string[];
+
+    try {
+      // 1. 如果在本地開發環境 (localhost)，先叫後端去爬官方最新價格寫入檔案
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocal) {
+        try {
+          console.log('[手動更新] 偵測到本地環境，正在觸發後端 API 刷新股價...');
+          const refreshRes = await fetch('/api/refresh', { method: 'POST' });
+          if (refreshRes.ok) {
+            console.log('[手動更新] 後端股價刷新成功！');
+          }
+        } catch (err: any) {
+          console.warn('[手動更新] 呼叫後端刷新 API 失敗，將直接讀取現有檔案:', err.message);
+        }
+      }
+
+      // 2. 從後端/靜態檔同步一次最新價格 (包含美股與大盤)
+      const res = await fetch('./stock_prices.json');
+      let serverPrices: Record<string, number> = {};
+      let serverDates: Record<string, string> = {};
+      if (res.ok) {
+        const serverData = await res.json();
+        serverPrices = serverData.prices || {};
+        serverDates = serverData.dates || {};
+      }
+
+      // 3. 跨網域直接呼叫台灣證交所與櫃買中心 API (當作 GitHub Pages 的前端直連備援)
+      const pricesMap: Record<string, number> = {};
+      try {
+        const twseRes = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+        if (twseRes.ok) {
+          const data = await twseRes.json();
+          data.forEach((item: any) => {
+            const code = item.Code ? item.Code.trim() : '';
+            const price = parseFloat(item.ClosingPrice);
+            if (code && !isNaN(price)) pricesMap[code] = price;
+          });
+        }
+      } catch (err: any) {
+        console.warn('[手動更新] 瀏覽器前端直連 TWSE 失敗 (可能受 CORS 限制，此為正常現象，已使用伺服器快取):', err.message);
+      }
+
+      try {
+        const tpexRes = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes');
+        if (tpexRes.ok) {
+          const data = await tpexRes.json();
+          data.forEach((item: any) => {
+            const code = item.SecuritiesCompanyCode ? item.SecuritiesCompanyCode.trim() : '';
+            const price = parseFloat(item.Close);
+            if (code && !isNaN(price)) pricesMap[code] = price;
+          });
+        }
+      } catch (err: any) {
+        console.warn('[手動更新] 瀏覽器前端直連 TPEx 失敗 (可能受 CORS 限制，此為正常現象，已使用伺服器快取):', err.message);
+      }
+
+      // 4. 計算目前最新台灣交易日日期
+      const now = new Date();
+      const twTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const hour = twTime.getUTCHours();
+      let tradingDate = new Date(twTime.getTime());
+      if (hour < 14) tradingDate.setDate(tradingDate.getDate() - 1);
+      const dayOfWeek = tradingDate.getDay();
+      if (dayOfWeek === 6) tradingDate.setDate(tradingDate.getDate() - 1);
+      else if (dayOfWeek === 0) tradingDate.setDate(tradingDate.getDate() - 2);
+      const twDateStr = tradingDate.toISOString().split('T')[0];
+
+      // 5. 合併直接抓到的台股價格與伺服器價格
+      const mergedPrices = { ...serverPrices };
+      const mergedDates = { ...serverDates };
+      
+      heldTickers.forEach(ticker => {
+        // 如果是台股且前端直接呼叫成功，則用前端的覆蓋
+        if (/^\d+[A-Z]?$/.test(ticker) && pricesMap[ticker] !== undefined) {
+          mergedPrices[ticker] = pricesMap[ticker];
+          mergedDates[ticker] = twDateStr;
+        }
+      });
+
+      // 比對有多少檔股票的現價與本地 LocalStorage 內的不同
+      let updateCount = 0;
+      heldTickers.forEach(ticker => {
+        const newPrice = mergedPrices[ticker];
+        const oldPrice = marketData.prices[ticker];
+        if (newPrice !== undefined && newPrice !== oldPrice) {
+          updateCount++;
+        }
+      });
+
+      // 6. 更新現價狀態
+      setMarketData({
+        updated: new Date().toISOString(),
+        prices: mergedPrices
+      });
+
+      // 7. 自動補登至歷史收盤價中 (weeklyPrices)
+      let autoLogCount = 0;
+      setWeeklyPrices(prev => {
+        let hasChanges = false;
+        const updatedList = [...prev];
+        
+        heldTickers.forEach(ticker => {
+          const price = mergedPrices[ticker];
+          const date = mergedDates[ticker] || twDateStr;
+          if (price === undefined || isNaN(price)) return;
+          
+          const exists = prev.some(wp => wp.ticker === ticker && wp.date === date);
+          if (!exists) {
+            updatedList.push({ date, ticker, price: Number(price) });
+            hasChanges = true;
+            autoLogCount++;
+          }
+        });
+
+        // 永遠補登大盤
+        if (mergedPrices['^TWII']) {
+          const date = mergedDates['^TWII'] || twDateStr;
+          const exists = prev.some(wp => wp.ticker === '^TWII' && wp.date === date);
+          if (!exists) {
+            updatedList.push({ date, ticker: '^TWII', price: Number(mergedPrices['^TWII']) });
+            hasChanges = true;
+            autoLogCount++;
+          }
+        }
+
+        if (hasChanges) {
+          return updatedList.sort((a, b) => {
+            const dateCompare = a.date.localeCompare(b.date);
+            if (dateCompare !== 0) return dateCompare;
+            return a.ticker.localeCompare(b.ticker);
+          });
+        }
+        return prev;
+      });
+
+      if (updateCount > 0 || autoLogCount > 0) {
+        alert(`一鍵更新完成！成功更新了 ${updateCount} 檔股票的最新現價，並自動補登了 ${autoLogCount} 筆歷史收盤價！`);
+      } else {
+        alert('股價與歷史紀錄已是最新狀態，無需重複更新！');
+      }
+    } catch (e: any) {
+      console.error('[手動更新] 發生錯誤:', e);
+      alert('手動更新失敗: ' + e.message);
+    }
   };
 
   const handleToggleUncleared = (txId: string) => {
@@ -1270,17 +1428,25 @@ export default function App() {
                         <h4 className="text-lg font-black text-[var(--text-main)] leading-tight">投資組合明細</h4>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setIsEditingTickers(!isEditingTickers)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2",
-                        isEditingTickers
-                          ? "bg-[var(--success)] text-white border-[var(--success)]"
-                          : "bg-[var(--bg-secondary)] text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text-main)]"
-                      )}
-                    >
-                      {isEditingTickers ? <><Check size={12} /> 完成排序</> : <><Palette size={12} /> 編輯順序</>}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpdateMarket}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border bg-[var(--bg-secondary)] text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text-main)] hover:border-[var(--accent)] flex items-center gap-2"
+                      >
+                        <TrendingUp size={12} /> 一鍵更新
+                      </button>
+                      <button
+                        onClick={() => setIsEditingTickers(!isEditingTickers)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2",
+                          isEditingTickers
+                            ? "bg-[var(--success)] text-white border-[var(--success)]"
+                            : "bg-[var(--bg-secondary)] text-[var(--text-dim)] border-[var(--border)] hover:text-[var(--text-main)]"
+                        )}
+                      >
+                        {isEditingTickers ? <><Check size={12} /> 完成排序</> : <><Palette size={12} /> 編輯順序</>}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Modern Ticker Navigation */}

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "prebuild": "node scripts/fetch_prices.js",
+    "prebuild": "node scripts/update_prices_github.js",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
