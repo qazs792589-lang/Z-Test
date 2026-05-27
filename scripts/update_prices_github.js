@@ -227,12 +227,19 @@ async function main() {
     }
   }
 
+  // 合併「現有 stock_prices.json 已追蹤的代號」進 heldTickers
+  // 這樣只要曾經追蹤過的股票就會永遠繼續更新，不會因為備份版本舊而漏掉
+  const existingTickers = Object.keys(pricesDb.prices);
+  const mergedTickerSet = new Set([...heldTickers, ...existingTickers]);
+  const allTickers = Array.from(mergedTickerSet);
+  console.log(`[股價更新] 本次更新代號 (備份持股 + 既有追蹤): ${allTickers.join(', ')}`);
+
   console.log('[股價更新] 開始更新目標持股收盤價...');
   
   let successCount = 0;
   let failCount = 0;
 
-  for (const ticker of heldTickers) {
+  for (const ticker of allTickers) {
     let openApiPrice = null;
     let openApiDate = null;
 
