@@ -254,14 +254,9 @@ export default function App() {
         
         const data = await response.json();
         if (data && data.updated && data.prices) {
-          // 1. 更新當前現價狀態 (marketData)
           setMarketData(prev => {
-            if (!prev.updated || new Date(data.updated) > new Date(prev.updated)) {
-              console.log('[股價同步] 偵測到較新的股價資料，已自動同步更新。最後更新時間:', data.updated);
-              return data;
-            }
-            console.log('[股價同步] 本地股價已是最新版本。');
-            return prev;
+            console.log('[股價同步] 偵測到股價資料，已自動同步更新。最後更新時間:', data.updated);
+            return data;
           });
 
           // 2. 自動將今日最新收盤價補登到歷史價格紀錄中 (weeklyPrices)
@@ -1037,10 +1032,12 @@ export default function App() {
       const res = await fetch(url, { cache: 'no-store' });
       let serverPrices: Record<string, number> = {};
       let serverDates: Record<string, string> = {};
+      let serverUpdated: string | null = null;
       if (res.ok) {
         const serverData = await res.json();
         serverPrices = serverData.prices || {};
         serverDates = serverData.dates || {};
+        serverUpdated = serverData.updated || null;
       }
 
       // 3. 跨網域直接呼叫台灣證交所與櫃買中心 API (當作 GitHub Pages 的前端直連備援)
@@ -1108,7 +1105,7 @@ export default function App() {
 
       // 6. 更新現價狀態
       setMarketData({
-        updated: new Date().toISOString(),
+        updated: serverUpdated || new Date().toISOString(),
         prices: mergedPrices
       });
 
