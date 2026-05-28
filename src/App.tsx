@@ -244,7 +244,9 @@ export default function App() {
         let url = `./stock_prices.json?t=${timestamp}`;
         if (window.location.hostname.includes('github.io')) {
           const repoName = window.location.pathname.split('/')[1] || 'Z-Test';
-          url = `https://qazs792589-lang.github.io/${repoName}/stock_prices.json?t=${timestamp}`;
+          url = `https://raw.githubusercontent.com/qazs792589-lang/${repoName}/main/stock_prices.json?t=${timestamp}`;
+        } else {
+          url = `https://raw.githubusercontent.com/qazs792589-lang/Z-Test/main/stock_prices.json?t=${timestamp}`;
         }
         console.log(`[股價同步] 正在獲取: ${url}`);
         const response = await fetch(url, { cache: 'no-store' });
@@ -1027,7 +1029,9 @@ export default function App() {
       let url = `./stock_prices.json?t=${timestamp}`;
       if (window.location.hostname.includes('github.io')) {
         const repoName = window.location.pathname.split('/')[1] || 'Z-Test';
-        url = `https://qazs792589-lang.github.io/${repoName}/stock_prices.json?t=${timestamp}`;
+        url = `https://raw.githubusercontent.com/qazs792589-lang/${repoName}/main/stock_prices.json?t=${timestamp}`;
+      } else {
+        url = `https://raw.githubusercontent.com/qazs792589-lang/Z-Test/main/stock_prices.json?t=${timestamp}`;
       }
       console.log(`[手動更新] 正在從網址獲取最新價格: ${url}`);
       const res = await fetch(url, { cache: 'no-store' });
