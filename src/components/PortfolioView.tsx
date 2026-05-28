@@ -366,6 +366,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           const originalPoint = chartData.find(d => d.name === label) || payload[0].payload;
+                          const roi = originalPoint.cost > 0 ? (originalPoint.profit / originalPoint.cost) * 100 : 0;
                           return (
                             <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-4 rounded-2xl shadow-2xl backdrop-blur-xl bg-opacity-80">
                               <div className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest border-b border-[var(--border)] pb-2.5 mb-2.5 flex items-center justify-between gap-4">
@@ -387,11 +388,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 ))}
                                 <div className="flex items-center justify-between gap-10 border-t border-[var(--border)] pt-2 mt-2">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+                                    <div className={cn("w-1.5 h-1.5 rounded-full", originalPoint.profit >= 0 ? "bg-[var(--success)]" : "bg-[var(--danger)]")} />
                                     <span className="text-[11px] font-bold text-[var(--text-dim)]">盈虧</span>
                                   </div>
                                   <span className={cn("text-xs font-mono font-black", originalPoint.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                     {originalPoint.profit >= 0 ? '+' : ''}{originalPoint.profit.toLocaleString()}
+                                    <span className="text-[10px] ml-1.5 opacity-80 font-sans tracking-normal">
+                                      ({roi >= 0 ? '+' : ''}{roi.toFixed(2)}%)
+                                    </span>
                                   </span>
                                 </div>
                               </div>
