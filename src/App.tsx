@@ -240,7 +240,14 @@ export default function App() {
     async function syncMarketPrices() {
       try {
         console.log('[股價同步] 正在從伺服器獲取最新價格...');
-        const response = await fetch('./stock_prices.json');
+        const timestamp = Date.now();
+        let url = `./stock_prices.json?t=${timestamp}`;
+        if (window.location.hostname.includes('github.io')) {
+          const repoName = window.location.pathname.split('/')[1] || 'Z-Test';
+          url = `https://qazs792589-lang.github.io/${repoName}/stock_prices.json?t=${timestamp}`;
+        }
+        console.log(`[股價同步] 正在獲取: ${url}`);
+        const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) throw new Error('無法取得 stock_prices.json');
         
         const data = await response.json();
@@ -1016,7 +1023,14 @@ export default function App() {
       }
 
       // 2. 從後端/靜態檔同步一次最新價格 (包含美股與大盤)
-      const res = await fetch('./stock_prices.json');
+      const timestamp = Date.now();
+      let url = `./stock_prices.json?t=${timestamp}`;
+      if (window.location.hostname.includes('github.io')) {
+        const repoName = window.location.pathname.split('/')[1] || 'Z-Test';
+        url = `https://qazs792589-lang.github.io/${repoName}/stock_prices.json?t=${timestamp}`;
+      }
+      console.log(`[手動更新] 正在從網址獲取最新價格: ${url}`);
+      const res = await fetch(url, { cache: 'no-store' });
       let serverPrices: Record<string, number> = {};
       let serverDates: Record<string, string> = {};
       if (res.ok) {
