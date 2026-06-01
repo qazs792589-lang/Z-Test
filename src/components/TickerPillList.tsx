@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Reorder, useDragControls } from 'motion/react';
 import { Database, Activity, X, GripVertical } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -90,6 +90,8 @@ export const TickerPillList: React.FC<TickerPillListProps> = ({
   stockMap, holdingsMap, onRenameTicker, onDeleteTicker, onImportBackup, onUpdateMarket,
   isEditing, allTickers
 }) => {
+  const [showZero, setShowZero] = useState(false);
+
   // Sync tickerOrder with allTickers to ensure every ticker is representable in the reorder group
   const effectiveOrder = useMemo(() => {
     const safeOrder = tickerOrder || [];
@@ -103,28 +105,63 @@ export const TickerPillList: React.FC<TickerPillListProps> = ({
     return order.filter(t => safeAll.includes(t));
   }, [allTickers, tickerOrder]);
 
+  const sortedAndFilteredOrder = useMemo(() => {
+    if (isEditing) {
+      return effectiveOrder;
+    }
+    
+    let list = [...effectiveOrder];
+    
+    // Sort: currentShares > 0 items go first
+    list.sort((a, b) => {
+      const aShares = holdingsMap[a]?.currentShares || 0;
+      const bShares = holdingsMap[b]?.currentShares || 0;
+      if (aShares > 0 && bShares <= 0) return -1;
+      if (aShares <= 0 && bShares > 0) return 1;
+      return 0;
+    });
+
+    // Filter: hide zero holdings if showZero is false
+    if (!showZero) {
+      list = list.filter(ticker => (holdingsMap[ticker]?.currentShares || 0) > 0);
+    }
+    
+    return list;
+  }, [effectiveOrder, holdingsMap, showZero, isEditing]);
+
   return (
-    <div className="w-full relative pb-6 pt-2">
-      <Reorder.Group 
-        axis="x" 
-        values={effectiveOrder} 
-        onReorder={setTickerOrder} 
-        className="flex gap-2 min-w-max px-1"
-      >
-        {effectiveOrder.map(ticker => (
-          <DraggablePill
-            key={ticker}
-            ticker={ticker}
-            name={stockMap[ticker] || ticker}
-            isZero={(holdingsMap[ticker]?.currentShares || 0) <= 0}
-            isSelected={selectedTicker === ticker}
-            onSelect={setSelectedTicker}
-            onRename={onRenameTicker}
-            onDelete={onDeleteTicker}
-            isEditing={isEditing}
-          />
-        ))}
-      </Reorder.Group>
+    <div className="w-full relative pb-6 pt-2 flex items-center justify-between gap-4">
+      <div className="overflow-x-auto scrollbar-none flex-1">
+        <Reorder.Group 
+          axis="x" 
+          values={sortedAndFilteredOrder} 
+          onReorder={setTickerOrder} 
+          className="flex gap-2 min-w-max px-1"
+        >
+          {sortedAndFilteredOrder.map(ticker => (
+            <DraggablePill
+              key={ticker}
+              ticker={ticker}
+              name={stockMap[ticker] || ticker}
+              isZero={(holdingsMap[ticker]?.currentShares || 0) <= 0}
+              isSelected={selectedTicker === ticker}
+              onSelect={setSelectedTicker}
+              onRename={onRenameTicker}
+              onDelete={onDeleteTicker}
+              isEditing={isEditing}
+            />
+          ))}
+        </Reorder.Group>
+      </div>
+      {!isEditing && (
+        <button
+          onClick={() => setShowZero(!showZero)}
+          className="px-3 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-dim)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm active:scale-95"
+        >
+          <Database size={10} />
+          {showZero ? "收起已清倉" : "顯示已清倉"}
+        </button>
+      )}
     </div>
   );
 };

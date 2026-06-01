@@ -32,11 +32,14 @@ function getLatestBackupFile() {
 function getHeldTickers(backupFilePath) {
   const tickers = new Set();
   
-  // 永遠包含大盤指數
+  // 永遠包含大盤與重要美股指數
   tickers.add('^TWII');
+  tickers.add('^IXIC');
+  tickers.add('^GSPC');
+  tickers.add('^DJI');
 
   if (!backupFilePath) {
-    console.log('[股價更新] 未找到備份檔案，將採用預設監控名單 (^TWII, 2330, 0050)');
+    console.log('[股價更新] 未找到備份檔案，將採用預設監控名單 (^TWII, ^IXIC, ^GSPC, ^DJI, 2330, 0050)');
     tickers.add('2330');
     tickers.add('0050');
     return Array.from(tickers);

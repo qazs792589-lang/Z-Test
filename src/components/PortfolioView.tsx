@@ -12,13 +12,15 @@ import {
   PieChart,
   Pie,
   Cell,
-  Label
+  Label,
+  ReferenceArea
 } from 'recharts';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Holding } from '../types';
 
 interface PortfolioViewProps {
+  isUsSector?: boolean;
   stats: {
     totalInvested: number;
     totalMarketValue: number;
@@ -36,7 +38,7 @@ interface PortfolioViewProps {
   };
   weeklyPrices: any[];
   setSelectedTicker: (ticker: string) => void;
-  setActiveView: (view: 'A' | 'B' | 'C') => void;
+  setActiveView: (view: 'A' | 'B' | 'C' | 'D' | 'E') => void;
   tickerOrder: string[];
   setWeeklyPrices: React.Dispatch<React.SetStateAction<any[]>>;
   tickerMetadata: Record<string, { assetClass?: string }>;
@@ -44,6 +46,7 @@ interface PortfolioViewProps {
 }
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({
+  isUsSector = false,
   stats,
   chartData,
   appData,
@@ -60,6 +63,20 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [viewMode, setViewMode] = useState<'ratio' | 'absolute'>('ratio');
   const [mDate, setMDate] = useState(new Date().toISOString().split('T')[0]);
   const [mPrice, setMPrice] = useState('');
+  const [selectedUsTicker, setSelectedUsTicker] = useState('^GSPC');
+  const activeTicker = isUsSector ? selectedUsTicker : '^TWII';
+
+  // 績效測量工具相關 States
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  const [measurementData, setMeasurementData] = useState<{
+    startDate: string;
+    endDate: string;
+    days: number;
+    bars: number;
+    portfolioChange: number;
+    benchChanges: Record<string, number>;
+  } | null>(null);
 
   const allTickers = useMemo(() => {
     // Get all tickers that have ever appeared in chartData
@@ -514,7 +531,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </p>
               </div>
             </div>
-
+            <div className="elegant-card p-0 overflow-hidden border-[var(--border)] bg-opacity-40 backdrop-blur-md shadow-2xl relative">
               <div className="p-4 md:p-6 pb-2 flex items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -554,7 +571,79 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               
               <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 30, right: 10, left: 15, bottom: 20 }}>
+                  <ComposedChart 
+                    data={chartData} 
+                    margin={{ top: 30, right: 10, left: 15, bottom: 20 }}
+                    onMouseDown={(e: any) => {
+                      if (viewMode === 'ratio' && e && e.activeLabel) {
+                        setRefAreaLeft(e.activeLabel);
+                        setRefAreaRight(e.activeLabel);
+                        setMeasurementData(null);
+                      }
+                    }}
+                    onMouseMove={(e: any) => {
+                      if (viewMode === 'ratio' && refAreaLeft && e && e.activeLabel) {
+                        setRefAreaRight(e.activeLabel);
+                      }
+                    }}
+                    onMouseUp={() => {
+                      if (viewMode === 'ratio' && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
+                        const [start, end] = refAreaLeft.localeCompare(refAreaRight) <= 0 
+                          ? [refAreaLeft, refAreaRight] 
+                          : [refAreaRight, refAreaLeft];
+                        
+                        const rangeData = chartData.filter(d => d.name >= start && d.name <= end);
+                        if (rangeData.length >= 2) {
+                          const startPt = rangeData[0];
+                          const endPt = rangeData[rangeData.length - 1];
+                          
+                          // Portfolio ROI Change
+                          const startPVal = 100 + (startPt.portfolioRoi || 0);
+                          const endPVal = 100 + (endPt.portfolioRoi || 0);
+                          const portfolioChange = ((endPVal / startPVal) - 1) * 100;
+                          
+                          const benchChanges: Record<string, number> = {};
+                          if (isUsSector) {
+                            const startSp = 100 + (startPt.sp500Roi || 0);
+                            const endSp = 100 + (endPt.sp500Roi || 0);
+                            benchChanges['標普 500'] = ((endSp / startSp) - 1) * 100;
+                            
+                            const startNas = 100 + (startPt.nasdaqRoi || 0);
+                            const endNas = 100 + (endPt.nasdaqRoi || 0);
+                            benchChanges['那斯達克'] = ((endNas / startNas) - 1) * 100;
+                            
+                            const startDow = 100 + (startPt.dowRoi || 0);
+                            const endDow = 100 + (endPt.dowRoi || 0);
+                            benchChanges['道瓊工業'] = ((endDow / startDow) - 1) * 100;
+                          } else {
+                            const startM = 100 + (startPt.marketRoi || 0);
+                            const endM = 100 + (endPt.marketRoi || 0);
+                            benchChanges['台股大盤'] = ((endM / startM) - 1) * 100;
+                          }
+                          
+                          const t1 = new Date(start).getTime();
+                          const t2 = new Date(end).getTime();
+                          const days = Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
+                          
+                          setMeasurementData({
+                            startDate: start,
+                            endDate: end,
+                            days,
+                            bars: rangeData.length,
+                            portfolioChange,
+                            benchChanges
+                          });
+                        } else {
+                          setRefAreaLeft(null);
+                          setRefAreaRight(null);
+                        }
+                      } else {
+                        setRefAreaLeft(null);
+                        setRefAreaRight(null);
+                        setMeasurementData(null);
+                      }
+                    }}
+                  >
                     <defs>
                       <linearGradient id="colorRoi" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3}/>
@@ -620,23 +709,31 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 {payload.map((item: any, idx: number) => (
                                   <div key={idx} className="flex items-center justify-between gap-12">
                                     <div className="flex items-center gap-2.5">
-                                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color || '#888' }} />
                                       <span className="text-[11px] font-bold text-[var(--text-main)]">{item.name}</span>
                                     </div>
                                     <span className={cn("text-xs font-mono font-black", (item.value || 0) >= 0 ? "text-[var(--text-main)]" : "text-[var(--danger)]")}>
                                       {viewMode === 'ratio' 
                                         ? `${(item.value || 0) >= 0 ? '+' : ''}${(item.value || 0).toFixed(2)}%`
-                                        : `${item.name.includes('大盤') ? '' : '$'}${Number(item.value).toLocaleString()}`
+                                        : `${item.name.includes('大盤') || item.name.includes('指數') ? '' : '$'}${Number(item.value).toLocaleString()}`
                                       }
                                     </span>
                                   </div>
                                 ))}
                                 {viewMode === 'ratio' && payload.length >= 2 && (
-                                  <div className="flex items-center justify-between gap-12 border-t border-[var(--border)] pt-3 mt-1">
-                                    <span className="text-[10px] font-black text-[var(--text-dim)] uppercase tracking-tighter">超額收益 (Alpha)</span>
-                                    <span className={cn("text-xs font-mono font-black", (payload[0].value - payload[1].value) >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
-                                      {(payload[0].value - payload[1].value) >= 0 ? '+' : ''}{(payload[0].value - payload[1].value).toFixed(2)}%
-                                    </span>
+                                  <div className="border-t border-[var(--border)] pt-3 mt-1 space-y-1.5">
+                                    <span className="text-[10px] font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1.5">超額收益 (Alpha)</span>
+                                    {payload.slice(1).map((item: any, idx: number) => {
+                                      const alpha = (payload[0].value || 0) - (item.value || 0);
+                                      return (
+                                        <div key={idx} className="flex items-center justify-between gap-12">
+                                          <span className="text-[10px] font-bold text-[var(--text-dim)]">vs {item.name}</span>
+                                          <span className={cn("text-xs font-mono font-black", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                            {alpha >= 0 ? '+' : ''}{alpha.toFixed(2)}%
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -671,31 +768,144 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--accent)' }} 
                       animationDuration={1000}
                     />
-                    <Line 
-                      yAxisId={viewMode === 'ratio' ? "left" : "right"}
-                      type="monotone" 
-                      name={viewMode === 'ratio' ? "大盤指數" : "大盤點數"} 
-                      dataKey={viewMode === 'ratio' ? "marketRoi" : "marketPrice"} 
-                      stroke="var(--text-dim)" 
-                      strokeWidth={2} 
-                      strokeDasharray="4 4" 
-                      dot={false} 
-                      activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--text-dim)' }} 
-                      opacity={0.6}
-                      animationDuration={1500}
-                    />
+                    {!isUsSector && (
+                      <Line 
+                        yAxisId={viewMode === 'ratio' ? "left" : "right"}
+                        type="monotone" 
+                        name={viewMode === 'ratio' ? "台股大盤" : "大盤點數"} 
+                        dataKey={viewMode === 'ratio' ? "marketRoi" : "marketPrice"} 
+                        stroke="var(--text-dim)" 
+                        strokeWidth={2} 
+                        strokeDasharray="4 4" 
+                        dot={false} 
+                        activeDot={{ r: 4, strokeWidth: 0, fill: 'var(--text-dim)' }} 
+                        opacity={0.6}
+                        animationDuration={1500}
+                      />
+                    )}
+                    {isUsSector && viewMode === 'ratio' && (
+                      <>
+                        <Line 
+                          yAxisId="left"
+                          type="monotone" 
+                          name="標普 500" 
+                          dataKey="sp500Roi" 
+                          stroke="#10b981" 
+                          strokeWidth={2.5} 
+                          strokeDasharray="6 3" 
+                          dot={false} 
+                          activeDot={{ r: 4, strokeWidth: 0, fill: '#10b981' }} 
+                          opacity={0.95}
+                          animationDuration={1500}
+                        />
+                        <Line 
+                          yAxisId="left"
+                          type="monotone" 
+                          name="那斯達克" 
+                          dataKey="nasdaqRoi" 
+                          stroke="#3b82f6" 
+                          strokeWidth={2.5} 
+                          strokeDasharray="6 3" 
+                          dot={false} 
+                          activeDot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }} 
+                          opacity={0.95}
+                          animationDuration={1500}
+                        />
+                        <Line 
+                          yAxisId="left"
+                          type="monotone" 
+                          name="道瓊工業" 
+                          dataKey="dowRoi" 
+                          stroke="#f59e0b" 
+                          strokeWidth={2.5} 
+                          strokeDasharray="6 3" 
+                          dot={false} 
+                          activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }} 
+                          opacity={0.95}
+                          animationDuration={1500}
+                        />
+                      </>
+                    )}
+                    {viewMode === 'ratio' && refAreaLeft && refAreaRight && (
+                      <ReferenceArea 
+                        yAxisId="left"
+                        x1={refAreaLeft} 
+                        x2={refAreaRight} 
+                        stroke="#3b82f6"
+                        strokeWidth={1.5}
+                        strokeDasharray="4 4"
+                        fill="#3b82f6" 
+                        fillOpacity={0.12} 
+                      />
+                    )}
                   </ComposedChart>
                 </ResponsiveContainer>
-              </div>
 
+                {/* 績效測量工具懸浮卡片 */}
+                {measurementData && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[var(--bg-secondary)]/95 border border-[var(--accent)]/50 text-[var(--text-main)] px-4 py-3 rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.4)] backdrop-blur-md text-center animate-in fade-in zoom-in-95 duration-200 min-w-[260px]">
+                    <div className="text-[11px] font-black tracking-wider flex items-center justify-center gap-1 mb-1">
+                      <span>區間個人績效：</span>
+                      <span className={cn("font-mono font-black text-sm", measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                        {measurementData.portfolioChange >= 0 ? '+' : ''}{measurementData.portfolioChange.toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-[var(--text-dim)] font-bold">
+                      {measurementData.bars} 根K棒，{measurementData.days} 日 ({measurementData.startDate.replace(/-/g, '/')} ~ {measurementData.endDate.replace(/-/g, '/')})
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-[var(--border)] flex justify-center gap-3 text-[9px] font-black">
+                      {Object.entries(measurementData.benchChanges).map(([name, val]) => (
+                        <span key={name} className="text-[var(--text-dim)]">
+                          {name}: <span className={val >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"}>{val >= 0 ? '+' : ''}{val.toFixed(1)}%</span>
+                        </span>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRefAreaLeft(null);
+                        setRefAreaRight(null);
+                        setMeasurementData(null);
+                      }}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-dim)] hover:text-[var(--danger)] border border-[var(--border)] flex items-center justify-center text-[9px] font-black cursor-pointer shadow hover:scale-110 active:scale-95 transition-all"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
             {/* Market Data Entry Section */}
             <div id="market-bench-input" className="elegant-card bg-opacity-40 backdrop-blur-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 rounded-xl bg-[var(--bg-tertiary)] text-[var(--accent)]">
                   <Edit2 size={16} />
                 </div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">大盤基準數據管理</h4>
+                <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">
+                  {isUsSector ? '美股基準數據管理' : '大盤基準數據管理'}
+                </h4>
               </div>
+
+              {isUsSector && (
+                <div className="flex gap-2 mb-4 bg-[var(--bg-tertiary)] p-1 rounded-xl border border-[var(--border)] max-w-xs">
+                  {[
+                    { ticker: '^GSPC', label: '標普 500' },
+                    { ticker: '^IXIC', label: '那斯達克' },
+                    { ticker: '^DJI', label: '道瓊工業' }
+                  ].map(tab => (
+                    <button
+                      key={tab.ticker}
+                      onClick={() => setSelectedUsTicker(tab.ticker)}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all",
+                        selectedUsTicker === tab.ticker ? "bg-[var(--accent)] text-[var(--bg-primary)] shadow-md" : "text-[var(--text-dim)]"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               
               <div className="grid grid-cols-[1.3fr_1fr_0.7fr] gap-2 items-end">
                 <div className="space-y-1.5">
@@ -709,7 +919,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="elegant-label">大盤點數</label>
+                  <label className="elegant-label">
+                    {activeTicker === '^TWII' ? '大盤點數' : activeTicker === '^GSPC' ? '標普 500 點數' : activeTicker === '^IXIC' ? '那斯達克點數' : '道瓊點數'}
+                  </label>
                   <input 
                     type="number" 
                     className="elegant-input text-xs h-[42px] px-2"
@@ -720,14 +932,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
                 <button 
                   onClick={() => {
-                    if (!mPrice) return;
+                    if (!mPrice || isNaN(parseFloat(mPrice))) return;
                     setWeeklyPrices(prev => {
-                      const others = prev.filter(p => !(p.date === mDate && p.ticker === '^TWII'));
-                      return [...others, { date: mDate, ticker: '^TWII', price: parseFloat(mPrice) }]
-                        .sort((a, b) => b.date.localeCompare(a.date));
+                      const others = prev.filter(p => !(p.date === mDate && p.ticker === activeTicker));
+                      return [...others, { date: mDate, ticker: activeTicker, price: parseFloat(mPrice) }]
+                        .sort((a, b) => a.date.localeCompare(b.date));
                     });
                     setMPrice('');
-                    alert('大盤數據已成功記錄！');
+                    alert(`${activeTicker === '^TWII' ? '台股大盤' : activeTicker === '^GSPC' ? '標普 500' : activeTicker === '^IXIC' ? '那斯達克' : '道瓊工業'} 數據已成功記錄！`);
                   }}
                   className="bg-[var(--accent)] text-[var(--bg-primary)] h-[42px] rounded-lg text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg w-full flex items-center justify-center cursor-pointer"
                 >
@@ -735,10 +947,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </button>
               </div>
 
-              {/* TAIEX History List */}
+              {/* Benchmark History List */}
               <div className="mt-8 border-t border-[var(--border)] pt-6">
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-4 flex items-center gap-2">
-                   <Activity size={12} /> 歷史紀錄清單
+                   <Activity size={12} /> {activeTicker === '^TWII' ? '台股大盤' : activeTicker === '^GSPC' ? '標普 500' : activeTicker === '^IXIC' ? '那斯達克' : '道瓊工業'} 歷史紀錄清單
                 </h4>
                 <div className="w-full">
                   <table className="w-full text-left">
@@ -751,7 +963,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
                       {weeklyPrices
-                        .filter(p => p.ticker === '^TWII')
+                        .filter(p => p.ticker === activeTicker)
                         .sort((a, b) => b.date.localeCompare(a.date))
                         .map((p, idx) => (
                         <tr key={idx} className="hover:bg-[var(--bg-primary)]/40 transition-colors group">
@@ -772,7 +984,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                             <button 
                               onClick={() => {
                                 if (window.confirm('確定要刪除這筆大盤紀錄嗎？')) {
-                                  setWeeklyPrices(prev => prev.filter(x => !(x.date === p.date && x.ticker === '^TWII')));
+                                  setWeeklyPrices(prev => prev.filter(x => !(x.date === p.date && x.ticker === activeTicker)));
                                 }
                               }}
                               className="p-1.5 text-[var(--text-dim)] hover:text-[var(--danger)] transition-all"
@@ -783,7 +995,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           </td>
                         </tr>
                       ))}
-                      {weeklyPrices.filter(p => p.ticker === '^TWII').length === 0 && (
+                      {weeklyPrices.filter(p => p.ticker === activeTicker).length === 0 && (
                         <tr>
                           <td colSpan={3} className="px-2 py-8 text-center text-[10px] text-[var(--text-dim)] italic">尚無大盤數據</td>
                         </tr>
@@ -797,5 +1009,5 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
          </motion.div>
        </div>
      </div>
-   );
- };
+    );
+  };
