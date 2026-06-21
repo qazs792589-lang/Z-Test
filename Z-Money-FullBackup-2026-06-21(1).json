@@ -605,22 +605,63 @@
       "notes": "台新定期定額"
     },
     {
-      "id": "pgihbbufe",
-      "date": "2026-06-01",
+      "id": "e4a9u7z44",
+      "date": "2026-06-02",
       "ticker": "AAPL",
-      "name": "Apple",
+      "name": "AAPL",
       "direction": "BUY",
       "quantity": 1000,
-      "unitPrice": 333,
+      "unitPrice": 437,
       "category": "General",
-      "fee": 94,
+      "fee": 124,
       "tax": 0,
-      "totalAmount": 333094,
-      "notes": "33"
+      "totalAmount": 437124
+    },
+    {
+      "id": "c35f5ky96",
+      "date": "2026-06-02",
+      "ticker": "NVDA",
+      "name": "NVDA",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 189,
+      "category": "General",
+      "fee": 53,
+      "tax": 0,
+      "totalAmount": 189053,
+      "notes": ""
+    },
+    {
+      "id": "9k51nr7t6",
+      "date": "2026-06-02",
+      "ticker": "TSLA",
+      "name": "TSLA",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 400,
+      "category": "General",
+      "fee": 114,
+      "tax": 0,
+      "totalAmount": 400114,
+      "notes": ""
+    },
+    {
+      "id": "sclbbyq9f",
+      "date": "2026-06-18",
+      "ticker": "SPCX",
+      "name": "Space x",
+      "direction": "BUY",
+      "quantity": 3,
+      "unitPrice": 6100,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 18320
     }
   ],
   "tickerOrder": [
     "0050",
+    "AAPL",
     "00631L",
     "3324",
     "8033",
@@ -631,7 +672,9 @@
     "微星",
     "技嘉",
     "2357",
-    "00635U"
+    "00635U",
+    "NVDA",
+    "TSLA"
   ],
   "tickerMetadata": {},
   "netWorthEntries": [
@@ -15345,6 +15388,21 @@
     },
     {
       "date": "2026-06-01",
+      "ticker": "^DJI",
+      "price": 51078.88
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "^GSPC",
+      "price": 7599.96
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "^IXIC",
+      "price": 27086.81
+    },
+    {
+      "date": "2026-06-01",
       "ticker": "^TWII",
       "price": 45337.91
     },
@@ -15377,26 +15435,257 @@
       "date": "2026-06-01",
       "ticker": "APPL",
       "price": 0
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "^DJI",
+      "price": 51307.79
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "^GSPC",
+      "price": 7609.78
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "^IXIC",
+      "price": 27093.9
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "^TWII",
+      "price": 45557.31
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "0050",
+      "price": 105.7
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "00631L",
+      "price": 37.91
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "3293",
+      "price": 799
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "3324",
+      "price": 1165
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "8033",
+      "price": 136
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "^DJI",
+      "price": 50687.07
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "^GSPC",
+      "price": 7553.68
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "^IXIC",
+      "price": 26853.98
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "^TWII",
+      "price": 46459.16
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "0050",
+      "price": 107.6
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "00631L",
+      "price": 39.22
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "3293",
+      "price": 789
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "3324",
+      "price": 1280
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "8033",
+      "price": 134.5
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "^DJI",
+      "price": 51202.26
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "^GSPC",
+      "price": 7431.46
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "^IXIC",
+      "price": 25888.84
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "^TWII",
+      "price": 45396.99
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "0050",
+      "price": 105.25
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "00631L",
+      "price": 37.07
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "3293",
+      "price": 751
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "3324",
+      "price": 1055
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "8033",
+      "price": 129
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "^DJI",
+      "price": 51999.67
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "^GSPC",
+      "price": 7511.35
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "^IXIC",
+      "price": 26376.34
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "^TWII",
+      "price": 45809.19
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "0050",
+      "price": 105.9
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "00631L",
+      "price": 37.31
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "3293",
+      "price": 772
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "3324",
+      "price": 1050
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "8033",
+      "price": 125
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^DJI",
+      "price": 51564.7
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^GSPC",
+      "price": 7500.58
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^IXIC",
+      "price": 26517.93
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^TWII",
+      "price": 46465.2
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "0050",
+      "price": 107.3
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "00631L",
+      "price": 38.33
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "3293",
+      "price": 793
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "3324",
+      "price": 1070
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "8033",
+      "price": 129.5
     }
   ],
-  "theme": "zen",
+  "theme": "gold",
   "marketData": {
-    "updated": "2026-06-01T06:14:42.166Z",
+    "updated": "2026-06-19T10:55:14.398Z",
     "prices": {
-      "3293": 769,
-      "3324": 1145,
-      "8033": 141,
-      "^TWII": 45337.91,
-      "0050": 105.5,
-      "00631L": 37.78
+      "3293": 793,
+      "3324": 1070,
+      "8033": 129.5,
+      "^TWII": 46465.2,
+      "^IXIC": 26517.93,
+      "^GSPC": 7500.58,
+      "^DJI": 51564.7,
+      "0050": 107.3,
+      "00631L": 38.33
     },
     "dates": {
-      "3293": "2026-06-01",
-      "3324": "2026-06-01",
-      "8033": "2026-06-01",
-      "^TWII": "2026-06-01",
-      "0050": "2026-06-01",
-      "00631L": "2026-06-01"
+      "3293": "2026-06-18",
+      "3324": "2026-06-18",
+      "8033": "2026-06-18",
+      "^TWII": "2026-06-18",
+      "^IXIC": "2026-06-18",
+      "^GSPC": "2026-06-18",
+      "^DJI": "2026-06-18",
+      "0050": "2026-06-18",
+      "00631L": "2026-06-18"
     }
   }
 }

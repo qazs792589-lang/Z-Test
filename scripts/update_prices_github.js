@@ -18,10 +18,27 @@ function getLatestBackupFile() {
   const files = fs.readdirSync(rootDir);
   const backupFiles = files
     .filter(f => f.startsWith('Z-Money-FullBackup-') && f.endsWith('.json'))
-    .sort((a, b) => b.localeCompare(a)); // 降冪排序，最新日期在最前面
+    .map(f => {
+      const match = f.match(/^Z-Money-FullBackup-(\d{4}-\d{2}-\d{2})(?:\((\d+)\))?\.json$/);
+      if (match) {
+        return {
+          filename: f,
+          date: match[1],
+          version: match[2] ? parseInt(match[2], 10) : 0
+        };
+      }
+      return null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.date !== b.date) {
+        return b.date.localeCompare(a.date);
+      }
+      return b.version - a.version;
+    });
 
   if (backupFiles.length > 0) {
-    const latestFile = path.join(rootDir, backupFiles[0]);
+    const latestFile = path.join(rootDir, backupFiles[0].filename);
     console.log(`[股價更新] 找到最新備份檔案: ${latestFile}`);
     return latestFile;
   }
