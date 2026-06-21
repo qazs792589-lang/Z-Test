@@ -773,9 +773,9 @@ export default function App() {
       const currentTxs = targetTransactions.filter(t => t.date === d.name);
       let cashFlow = 0;
       currentTxs.forEach(t => {
-        if (t.direction === 'BUY') cashFlow += t.totalAmount;
-        if (t.direction === 'SELL') cashFlow -= t.totalAmount;
-        if (t.direction === 'DIVIDEND') cashFlow -= t.totalAmount;
+        if (t.direction === 'BUY') cashFlow += Math.abs(t.totalAmount);
+        if (t.direction === 'SELL') cashFlow -= Math.abs(t.totalAmount);
+        if (t.direction === 'DIVIDEND') cashFlow -= Math.abs(t.totalAmount);
       });
 
       const curTw = getInterpolatedPrice(d.name, twPrices, baseTwPrice);
@@ -878,7 +878,8 @@ export default function App() {
       unitPrice: 0,
       quantity: 1000,
       notes: '',
-      manualFee: ''
+      manualFee: '',
+      manualTax: ''
     }));
   };
 
@@ -970,6 +971,7 @@ export default function App() {
       customFee: tx.fee,
       customTax: tx.tax,
       manualFee: tx.fee,
+      manualTax: tx.direction === 'SELL' ? tx.tax : '',
       notes: tx.notes || ''
     });
     setActiveView('A');
@@ -1450,7 +1452,20 @@ export default function App() {
 
                         <div className="flex flex-col text-right lg:text-left">
                           <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-tighter mb-1 font-bold">{preview.taxLabel}</span>
-                          <span className="text-2xl font-mono text-[var(--text-main)] font-black">${preview.tax.toLocaleString()}</span>
+                          {formData.direction === 'SELL' ? (
+                            <div className="relative group">
+                              <input
+                                type="number"
+                                className="bg-transparent border-none p-0 text-2xl font-mono text-[var(--text-main)] font-black w-full focus:outline-none focus:ring-0 placeholder:opacity-20 text-right lg:text-left"
+                                value={formData.manualTax}
+                                placeholder={preview.autoTax?.toString()}
+                                onChange={(e) => setFormData({ ...formData, manualTax: e.target.value })}
+                              />
+                              <div className="absolute bottom-0 left-0 w-full h-px bg-[var(--accent)] opacity-10 group-hover:opacity-40 transition-opacity" />
+                            </div>
+                          ) : (
+                            <span className="text-2xl font-mono text-[var(--text-dim)] font-black">$0</span>
+                          )}
                         </div>
 
                         <div className="flex flex-col">
@@ -1466,7 +1481,7 @@ export default function App() {
                             <button
                               onClick={() => {
                                 setEditingTxId(null);
-                                setFormData(prev => ({ ...prev, ticker: '', name: '', unitPrice: 0, quantity: 1000, notes: '' }));
+                                setFormData(prev => ({ ...prev, ticker: '', name: '', unitPrice: 0, quantity: 1000, notes: '', manualFee: '', manualTax: '' }));
                               }}
                               className="w-1/3 bg-[var(--accent)] text-white h-[48px] md:h-[56px] rounded-xl font-black text-sm md:text-base hover:opacity-90 active:scale-[0.95] transition-all flex items-center justify-center gap-2"
                             >
