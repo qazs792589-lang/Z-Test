@@ -798,6 +798,7 @@ export default function App() {
 
       return {
         ...d,
+        cashFlow,
         portfolioRoi: nav - 100,
         marketRoi,
         marketPrice: curTw,
