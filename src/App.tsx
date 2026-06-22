@@ -769,6 +769,8 @@ export default function App() {
     let nav = 100;
     let prevTotalValue = filteredBaseData[0].value;
 
+    const baseValue = filteredBaseData[0]?.value || 0;
+
     return filteredBaseData.map((d, idx) => {
       const currentTxs = targetTransactions.filter(t => t.date === d.name);
       let cashFlow = 0;
@@ -796,10 +798,13 @@ export default function App() {
         prevTotalValue = d.value;
       }
 
+      const adjustedValue = Math.floor(baseValue * (nav / 100));
+
       return {
         ...d,
         cashFlow,
         portfolioRoi: nav - 100,
+        adjustedValue,
         marketRoi,
         marketPrice: curTw,
         nasdaqRoi,

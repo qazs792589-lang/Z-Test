@@ -472,7 +472,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                               </div>
                               <div className="space-y-2">
                                 {[
-                                  { label: '市值', value: originalPoint.value, color: 'var(--accent)' },
+                                  { 
+                                    label: viewMode === 'absolute' ? '資產金額' : '市值', 
+                                    value: viewMode === 'absolute' ? originalPoint.adjustedValue : originalPoint.value, 
+                                    color: 'var(--accent)' 
+                                  },
                                   { label: '成本', value: originalPoint.cost, color: 'var(--danger)' }
                                 ].sort((a, b) => b.value - a.value).map((item, idx) => (
                                   <div key={idx} className="flex items-center justify-between gap-10">
@@ -799,7 +803,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       yAxisId="left"
                       type="monotone" 
                       name={viewMode === 'ratio' ? "個人帳戶" : "資產金額"} 
-                      dataKey={viewMode === 'ratio' ? "portfolioRoi" : "value"} 
+                      dataKey={viewMode === 'ratio' ? "portfolioRoi" : "adjustedValue"} 
                       stroke="var(--accent)" 
                       strokeWidth={4} 
                       dot={false} 
