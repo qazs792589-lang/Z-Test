@@ -1,0 +1,2156 @@
+{
+  "transactions": [
+    {
+      "id": "64kne7muv",
+      "date": "2024-09-18",
+      "ticker": "3293",
+      "name": "鈊象",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 800,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 8020,
+      "notes": "",
+      "isManualRealized": false
+    },
+    {
+      "id": "c6qfv6pdb",
+      "date": "2025-08-18",
+      "ticker": "3293",
+      "name": "鈊象",
+      "direction": "DIVIDEND",
+      "quantity": 10,
+      "unitPrice": 28,
+      "category": "General",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": -280,
+      "isManualRealized": false
+    },
+    {
+      "id": "hadfkrehy",
+      "date": "2026-01-05",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 100,
+      "unitPrice": 69.8,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 7000,
+      "isUncleared": true,
+      "isManualRealized": false
+    },
+    {
+      "id": "v20tqh5lq",
+      "date": "2026-02-11",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "DIVIDEND",
+      "quantity": 100,
+      "unitPrice": 0.9,
+      "category": "General",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": -90,
+      "isManualRealized": true
+    },
+    {
+      "id": "2fnnhdaz5",
+      "date": "2026-03-18",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 150,
+      "unitPrice": 77.85,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 11697.5,
+      "isManualRealized": false,
+      "isUncleared": true
+    },
+    {
+      "id": "5lcsj83tb",
+      "date": "2026-04-22",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 110,
+      "unitPrice": 86.4,
+      "category": "General",
+      "fee": 13,
+      "tax": 0,
+      "totalAmount": 9517,
+      "notes": ""
+    },
+    {
+      "id": "mhx9yr0ni",
+      "date": "2026-04-07",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 20.73,
+      "category": "General",
+      "fee": 1,
+      "tax": 0,
+      "totalAmount": 208.3,
+      "notes": ""
+    },
+    {
+      "id": "e3te4kftx",
+      "date": "2026-03-31",
+      "ticker": "3324",
+      "name": "雙鴻",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 880,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 8820,
+      "isUncleared": true
+    },
+    {
+      "id": "cjtuyw6rm",
+      "date": "2026-03-31",
+      "ticker": "3324",
+      "name": "雙鴻",
+      "direction": "BUY",
+      "quantity": 12,
+      "unitPrice": 928,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 11156,
+      "isUncleared": true
+    },
+    {
+      "id": "56jbj9avh",
+      "date": "2026-04-02",
+      "ticker": "8033",
+      "name": "雷虎",
+      "direction": "BUY",
+      "quantity": 80,
+      "unitPrice": 136.5,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 10940
+    },
+    {
+      "id": "8k83vo9tr",
+      "date": "2021-06-09",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 34.45,
+      "category": "Stock",
+      "fee": 49.2635,
+      "tax": 0,
+      "totalAmount": 34499.2635,
+      "isManualRealized": true
+    },
+    {
+      "id": "e9m49i2sh",
+      "date": "2025-03-11",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "SELL",
+      "quantity": 1000,
+      "unitPrice": 35.8,
+      "category": "Stock",
+      "fee": 51.015,
+      "tax": 35.8,
+      "totalAmount": 35713.185
+    },
+    {
+      "id": "qh0t1ngq7",
+      "date": "2021-09-22",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 32.75,
+      "category": "Stock",
+      "fee": 46.8325,
+      "tax": 0,
+      "totalAmount": 32796.8325,
+      "isManualRealized": true
+    },
+    {
+      "id": "uai1oyuyv",
+      "date": "2024-11-12",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 2130,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 2130
+    },
+    {
+      "id": "rav8lad9d",
+      "date": "2025-02-20",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 2130,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 2130
+    },
+    {
+      "id": "s8m40216b",
+      "date": "2025-05-14",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 1060,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 1060
+    },
+    {
+      "id": "k34dsvbi3",
+      "date": "2025-08-08",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 856,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 856
+    },
+    {
+      "id": "e7og42nos",
+      "date": "2025-11-14",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 856,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 856
+    },
+    {
+      "id": "t1f9vj4kv",
+      "date": "2026-02-11",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 856,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 856
+    },
+    {
+      "id": "e689dl5yp",
+      "date": "2026-04-14",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "SELL",
+      "quantity": 1000,
+      "unitPrice": 40,
+      "category": "Stock",
+      "fee": 57,
+      "tax": 40,
+      "totalAmount": 39903
+    },
+    {
+      "id": "vycgq1vx5",
+      "date": "2024-10-21",
+      "ticker": "2357",
+      "name": "華碩",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 592,
+      "category": "Stock",
+      "fee": 20.0296,
+      "tax": 0,
+      "totalAmount": 5940.0296,
+      "isManualRealized": true
+    },
+    {
+      "id": "1jl2368bj",
+      "date": "2025-03-11",
+      "ticker": "2357",
+      "name": "華碩",
+      "direction": "SELL",
+      "quantity": 10,
+      "unitPrice": 650,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 19.5,
+      "totalAmount": 6460.5
+    },
+    {
+      "id": "6ygnfrx9m",
+      "date": "2025-02-19",
+      "ticker": "大魯閣",
+      "name": "大魯閣",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 21.5,
+      "category": "Stock",
+      "fee": 30.745,
+      "tax": 0,
+      "totalAmount": 21530.745,
+      "isManualRealized": true
+    },
+    {
+      "id": "22j6nqrbb",
+      "date": "2025-10-13",
+      "ticker": "大魯閣",
+      "name": "大魯閣",
+      "direction": "SELL",
+      "quantity": 1000,
+      "unitPrice": 17.5,
+      "category": "Stock",
+      "fee": 24.9375,
+      "tax": 52.5,
+      "totalAmount": 17422.5625
+    },
+    {
+      "id": "iwznquhsr",
+      "date": "2024-11-11",
+      "ticker": "技嘉",
+      "name": "技嘉",
+      "direction": "BUY",
+      "quantity": 20,
+      "unitPrice": 305.5,
+      "category": "Stock",
+      "fee": 20.03055,
+      "tax": 0,
+      "totalAmount": 6130.03055,
+      "isManualRealized": true
+    },
+    {
+      "id": "16y5r5p9o",
+      "date": "2025-01-15",
+      "ticker": "技嘉",
+      "name": "技嘉",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 250,
+      "category": "Stock",
+      "fee": 20.0125,
+      "tax": 0,
+      "totalAmount": 2520.0125,
+      "isManualRealized": true
+    },
+    {
+      "id": "uxdc6q7g9",
+      "date": "2025-04-11",
+      "ticker": "技嘉",
+      "name": "技嘉",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 198,
+      "category": "Stock",
+      "fee": 20.0099,
+      "tax": 0,
+      "totalAmount": 2000.0099,
+      "isManualRealized": true
+    },
+    {
+      "id": "g9trfnni8",
+      "date": "2025-08-28",
+      "ticker": "技嘉",
+      "name": "技嘉",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 390,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 390
+    },
+    {
+      "id": "vgf3hb31y",
+      "date": "2025-10-13",
+      "ticker": "技嘉",
+      "name": "技嘉",
+      "direction": "SELL",
+      "quantity": 40,
+      "unitPrice": 290,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 34.8,
+      "totalAmount": 11545.2
+    },
+    {
+      "id": "03drsjfd2",
+      "date": "2025-04-30",
+      "ticker": "微星",
+      "name": "微星",
+      "direction": "BUY",
+      "quantity": 30,
+      "unitPrice": 140,
+      "category": "Stock",
+      "fee": 20.021,
+      "tax": 0,
+      "totalAmount": 4220.021,
+      "isManualRealized": true
+    },
+    {
+      "id": "c5j0oyl0s",
+      "date": "2025-09-18",
+      "ticker": "微星",
+      "name": "微星",
+      "direction": "DIVIDEND",
+      "quantity": 1,
+      "unitPrice": 140,
+      "category": "Stock",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": 140
+    },
+    {
+      "id": "u10tousw1",
+      "date": "2025-09-17",
+      "ticker": "微星",
+      "name": "微星",
+      "direction": "BUY",
+      "quantity": 20,
+      "unitPrice": 122,
+      "category": "Stock",
+      "fee": 20.0122,
+      "tax": 0,
+      "totalAmount": 2460.0122,
+      "isManualRealized": true
+    },
+    {
+      "id": "hqyqgeylt",
+      "date": "2025-10-13",
+      "ticker": "微星",
+      "name": "微星",
+      "direction": "SELL",
+      "quantity": 50,
+      "unitPrice": 110,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 16.5,
+      "totalAmount": 5463.5
+    },
+    {
+      "id": "ztdoezdc6",
+      "date": "2025-07-24",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 150,
+      "unitPrice": 51,
+      "category": "Stock",
+      "fee": 20.03825,
+      "tax": 0,
+      "totalAmount": 7670.03825,
+      "isManualRealized": true
+    },
+    {
+      "id": "5vkzkjvrq",
+      "date": "2025-10-13",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "SELL",
+      "quantity": 150,
+      "unitPrice": 60.5,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 9.075,
+      "totalAmount": 9045.925,
+      "isManualRealized": true
+    },
+    {
+      "id": "mzvw6x939",
+      "date": "2025-09-05",
+      "ticker": "宏碁",
+      "name": "宏碁",
+      "direction": "BUY",
+      "quantity": 175,
+      "unitPrice": 34.4,
+      "category": "Stock",
+      "fee": 20.0301,
+      "tax": 0,
+      "totalAmount": 6040.0301,
+      "isManualRealized": true
+    },
+    {
+      "id": "cxglzdoqb",
+      "date": "2025-10-13",
+      "ticker": "宏碁",
+      "name": "宏碁",
+      "direction": "SELL",
+      "quantity": 175,
+      "unitPrice": 30,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 15.75,
+      "totalAmount": 5214.25
+    },
+    {
+      "id": "hiuf45vh7",
+      "date": "2025-10-21",
+      "ticker": "00635U",
+      "name": "黃金ETF",
+      "direction": "BUY",
+      "quantity": 120,
+      "unitPrice": 46.9,
+      "category": "Stock",
+      "fee": 20.02814,
+      "tax": 0,
+      "totalAmount": 5648.02814,
+      "notes": "",
+      "isManualRealized": true
+    },
+    {
+      "id": "i05rhx84r",
+      "date": "2026-02-02",
+      "ticker": "00635U",
+      "name": "黃金ETF",
+      "direction": "SELL",
+      "quantity": 120,
+      "unitPrice": 50.35,
+      "category": "Stock",
+      "fee": 20,
+      "tax": 6.042,
+      "totalAmount": 6015.958
+    },
+    {
+      "id": "ar5gtb3xa",
+      "date": "2025-04-14",
+      "ticker": "3324",
+      "name": "雙鴻",
+      "direction": "BUY",
+      "quantity": 10,
+      "unitPrice": 495,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 4970,
+      "isManualRealized": true,
+      "notes": ""
+    },
+    {
+      "id": "zpm7fm16c",
+      "date": "2025-06-23",
+      "ticker": "3324",
+      "name": "雙鴻",
+      "direction": "SELL",
+      "quantity": 10,
+      "unitPrice": 630,
+      "category": "General",
+      "fee": 20,
+      "tax": 18,
+      "totalAmount": -6262,
+      "isManualRealized": true
+    },
+    {
+      "id": "5xgig0er5",
+      "date": "2025-07-10",
+      "ticker": "3324",
+      "name": "雙鴻",
+      "direction": "DIVIDEND",
+      "quantity": 10,
+      "unitPrice": 9,
+      "category": "General",
+      "fee": 0,
+      "tax": 0,
+      "totalAmount": -90,
+      "isManualRealized": true
+    },
+    {
+      "id": "3lgkzx1n3",
+      "date": "2026-05-07",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "BUY",
+      "quantity": 100,
+      "unitPrice": 33.15,
+      "category": "General",
+      "fee": 4,
+      "tax": 0,
+      "totalAmount": 3319,
+      "notes": "永豐"
+    },
+    {
+      "id": "zh1vi7fuj",
+      "date": "2026-05-20",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 102,
+      "unitPrice": 93.23,
+      "category": "General",
+      "fee": 1,
+      "tax": 0,
+      "totalAmount": 9510.460000000001,
+      "notes": "台新定期定額"
+    },
+    {
+      "id": "dx73gexkh",
+      "date": "2026-06-04",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "BUY",
+      "quantity": 890,
+      "unitPrice": 38.47,
+      "category": "General",
+      "fee": 48,
+      "tax": 0,
+      "totalAmount": 34286.299999999996
+    },
+    {
+      "id": "o9d4v3x6p",
+      "date": "2026-06-08",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "SELL",
+      "quantity": 10,
+      "unitPrice": 34.5,
+      "category": "General",
+      "fee": 1,
+      "tax": 0,
+      "totalAmount": -344,
+      "notes": "先逃"
+    },
+    {
+      "id": "f4is8sprx",
+      "date": "2026-06-08",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "SELL",
+      "quantity": 990,
+      "unitPrice": 34.5,
+      "category": "General",
+      "fee": 20,
+      "tax": 102,
+      "totalAmount": -34033,
+      "notes": "先逃再抓一個大的"
+    },
+    {
+      "id": "nmlsl4qqq",
+      "date": "2026-06-15",
+      "ticker": "00631L",
+      "name": "元大50正2",
+      "direction": "BUY",
+      "quantity": 400,
+      "unitPrice": 37.01,
+      "category": "General",
+      "fee": 21,
+      "tax": 0,
+      "totalAmount": 14825,
+      "notes": ""
+    },
+    {
+      "id": "obv8zt3oe",
+      "date": "2026-06-16",
+      "ticker": "0050",
+      "name": "0050",
+      "direction": "BUY",
+      "quantity": 94,
+      "unitPrice": 105.51,
+      "category": "General",
+      "fee": 1,
+      "tax": 0,
+      "totalAmount": 9918.94,
+      "notes": "定期定額"
+    }
+  ],
+  "tickerOrder": [
+    "0050",
+    "00631L",
+    "3324",
+    "8033",
+    "3293",
+    "0056",
+    "大魯閣",
+    "宏碁",
+    "微星",
+    "技嘉",
+    "2357",
+    "00635U"
+  ],
+  "tickerMetadata": {},
+  "netWorthEntries": [
+    {
+      "date": "2026-06-12",
+      "assets": {
+        "現金": 184037,
+        "加密貨幣": 4264
+      }
+    },
+    {
+      "date": "2026-05-22",
+      "assets": {
+        "現金": 212270,
+        "加密貨幣": 4783.8
+      }
+    },
+    {
+      "date": "2026-04-25",
+      "assets": {
+        "現金": 225281,
+        "加密貨幣": 4752.9
+      }
+    },
+    {
+      "date": "2026-03-27",
+      "assets": {
+        "現金": 125666,
+        "加密貨幣": 4676.1
+      }
+    },
+    {
+      "date": "2026-02-11",
+      "assets": {
+        "現金": 115796,
+        "加密貨幣": 1526.4
+      }
+    },
+    {
+      "date": "2026-01-23",
+      "assets": {
+        "現金": -20246,
+        "加密貨幣": 2347.5
+      }
+    },
+    {
+      "date": "2025-11-21",
+      "assets": {
+        "現金": 97534,
+        "加密貨幣": 2413.2
+      }
+    },
+    {
+      "date": "2025-10-22",
+      "assets": {
+        "現金": 90521,
+        "加密貨幣": 3664
+      }
+    }
+  ],
+  "weeklyPrices": [
+    {
+      "date": "2024-01-05",
+      "ticker": "^TWII",
+      "price": 17519
+    },
+    {
+      "date": "2024-03-29",
+      "ticker": "^TWII",
+      "price": 20294
+    },
+    {
+      "date": "2024-06-28",
+      "ticker": "^TWII",
+      "price": 23032
+    },
+    {
+      "date": "2024-09-27",
+      "ticker": "^TWII",
+      "price": 22822
+    },
+    {
+      "date": "2024-12-27",
+      "ticker": "^TWII",
+      "price": 23035
+    },
+    {
+      "date": "2025-01-03",
+      "ticker": "^TWII",
+      "price": 23500
+    },
+    {
+      "date": "2025-03-28",
+      "ticker": "^TWII",
+      "price": 25800
+    },
+    {
+      "date": "2025-06-27",
+      "ticker": "^TWII",
+      "price": 27200
+    },
+    {
+      "date": "2025-09-26",
+      "ticker": "^TWII",
+      "price": 28100
+    },
+    {
+      "date": "2025-10-03",
+      "ticker": "0056",
+      "price": 37.04
+    },
+    {
+      "date": "2025-10-03",
+      "ticker": "3293",
+      "price": 800
+    },
+    {
+      "date": "2025-10-07",
+      "ticker": "0056",
+      "price": 37.46
+    },
+    {
+      "date": "2025-10-07",
+      "ticker": "3293",
+      "price": 804
+    },
+    {
+      "date": "2025-10-09",
+      "ticker": "0056",
+      "price": 37.42
+    },
+    {
+      "date": "2025-10-09",
+      "ticker": "3293",
+      "price": 787
+    },
+    {
+      "date": "2025-10-17",
+      "ticker": "0056",
+      "price": 37.11
+    },
+    {
+      "date": "2025-10-17",
+      "ticker": "3293",
+      "price": 759
+    },
+    {
+      "date": "2025-10-21",
+      "ticker": "黃金ETF",
+      "price": 46.9
+    },
+    {
+      "date": "2025-10-23",
+      "ticker": "0056",
+      "price": 36.81
+    },
+    {
+      "date": "2025-10-23",
+      "ticker": "3293",
+      "price": 756
+    },
+    {
+      "date": "2025-10-23",
+      "ticker": "黃金ETF",
+      "price": 44.19
+    },
+    {
+      "date": "2025-10-31",
+      "ticker": "0056",
+      "price": 37.45
+    },
+    {
+      "date": "2025-10-31",
+      "ticker": "3293",
+      "price": 720
+    },
+    {
+      "date": "2025-10-31",
+      "ticker": "黃金ETF",
+      "price": 43.18
+    },
+    {
+      "date": "2025-11-07",
+      "ticker": "0056",
+      "price": 36.55
+    },
+    {
+      "date": "2025-11-07",
+      "ticker": "3293",
+      "price": 726
+    },
+    {
+      "date": "2025-11-07",
+      "ticker": "黃金ETF",
+      "price": 43.03
+    },
+    {
+      "date": "2025-11-14",
+      "ticker": "0056",
+      "price": 36.13
+    },
+    {
+      "date": "2025-11-14",
+      "ticker": "3293",
+      "price": 743
+    },
+    {
+      "date": "2025-11-14",
+      "ticker": "黃金ETF",
+      "price": 45.08
+    },
+    {
+      "date": "2025-11-21",
+      "ticker": "0056",
+      "price": 35
+    },
+    {
+      "date": "2025-11-21",
+      "ticker": "3293",
+      "price": 757
+    },
+    {
+      "date": "2025-11-21",
+      "ticker": "黃金ETF",
+      "price": 43.65
+    },
+    {
+      "date": "2025-11-28",
+      "ticker": "0056",
+      "price": 36.02
+    },
+    {
+      "date": "2025-11-28",
+      "ticker": "3293",
+      "price": 743
+    },
+    {
+      "date": "2025-11-28",
+      "ticker": "黃金ETF",
+      "price": 44.87
+    },
+    {
+      "date": "2025-12-05",
+      "ticker": "0056",
+      "price": 36.55
+    },
+    {
+      "date": "2025-12-05",
+      "ticker": "3293",
+      "price": 725
+    },
+    {
+      "date": "2025-12-05",
+      "ticker": "黃金ETF",
+      "price": 45.32
+    },
+    {
+      "date": "2025-12-22",
+      "ticker": "0056",
+      "price": 36.72
+    },
+    {
+      "date": "2025-12-22",
+      "ticker": "3293",
+      "price": 706
+    },
+    {
+      "date": "2025-12-22",
+      "ticker": "黃金ETF",
+      "price": 47.36
+    },
+    {
+      "date": "2025-12-26",
+      "ticker": "^TWII",
+      "price": 28963
+    },
+    {
+      "date": "2026-01-02",
+      "ticker": "^TWII",
+      "price": 29094
+    },
+    {
+      "date": "2026-01-02",
+      "ticker": "0056",
+      "price": 37.01
+    },
+    {
+      "date": "2026-01-02",
+      "ticker": "3293",
+      "price": 730
+    },
+    {
+      "date": "2026-01-02",
+      "ticker": "黃金ETF",
+      "price": 46.93
+    },
+    {
+      "date": "2026-01-05",
+      "ticker": "0050",
+      "price": 69.8
+    },
+    {
+      "date": "2026-01-09",
+      "ticker": "^TWII",
+      "price": 30403
+    },
+    {
+      "date": "2026-01-09",
+      "ticker": "0050",
+      "price": 69.85
+    },
+    {
+      "date": "2026-01-09",
+      "ticker": "0056",
+      "price": 37.4
+    },
+    {
+      "date": "2026-01-09",
+      "ticker": "3293",
+      "price": 731
+    },
+    {
+      "date": "2026-01-09",
+      "ticker": "黃金ETF",
+      "price": 47.76
+    },
+    {
+      "date": "2026-01-16",
+      "ticker": "^TWII",
+      "price": 31346
+    },
+    {
+      "date": "2026-01-16",
+      "ticker": "0050",
+      "price": 72
+    },
+    {
+      "date": "2026-01-16",
+      "ticker": "0056",
+      "price": 38.26
+    },
+    {
+      "date": "2026-01-16",
+      "ticker": "3293",
+      "price": 749
+    },
+    {
+      "date": "2026-01-16",
+      "ticker": "黃金ETF",
+      "price": 49.21
+    },
+    {
+      "date": "2026-01-23",
+      "ticker": "^TWII",
+      "price": 31956
+    },
+    {
+      "date": "2026-01-23",
+      "ticker": "0050",
+      "price": 72.25
+    },
+    {
+      "date": "2026-01-23",
+      "ticker": "0056",
+      "price": 37.73
+    },
+    {
+      "date": "2026-01-23",
+      "ticker": "3293",
+      "price": 738
+    },
+    {
+      "date": "2026-01-23",
+      "ticker": "黃金ETF",
+      "price": 53
+    },
+    {
+      "date": "2026-01-30",
+      "ticker": "^TWII",
+      "price": 32175
+    },
+    {
+      "date": "2026-01-30",
+      "ticker": "0050",
+      "price": 72.6
+    },
+    {
+      "date": "2026-01-30",
+      "ticker": "0056",
+      "price": 37.58
+    },
+    {
+      "date": "2026-01-30",
+      "ticker": "3293",
+      "price": 716
+    },
+    {
+      "date": "2026-01-30",
+      "ticker": "黃金ETF",
+      "price": 55.8
+    },
+    {
+      "date": "2026-02-02",
+      "ticker": "黃金ETF",
+      "price": 50.35
+    },
+    {
+      "date": "2026-02-06",
+      "ticker": "^TWII",
+      "price": 31510
+    },
+    {
+      "date": "2026-02-06",
+      "ticker": "0050",
+      "price": 71.9
+    },
+    {
+      "date": "2026-02-06",
+      "ticker": "0056",
+      "price": 37.52
+    },
+    {
+      "date": "2026-02-06",
+      "ticker": "3293",
+      "price": 681
+    },
+    {
+      "date": "2026-02-11",
+      "ticker": "0050",
+      "price": 77.2
+    },
+    {
+      "date": "2026-02-11",
+      "ticker": "0056",
+      "price": 38.7
+    },
+    {
+      "date": "2026-02-11",
+      "ticker": "3293",
+      "price": 682
+    },
+    {
+      "date": "2026-02-26",
+      "ticker": "^TWII",
+      "price": 35393
+    },
+    {
+      "date": "2026-02-26",
+      "ticker": "0050",
+      "price": 81.15
+    },
+    {
+      "date": "2026-02-26",
+      "ticker": "0056",
+      "price": 40.29
+    },
+    {
+      "date": "2026-02-26",
+      "ticker": "3293",
+      "price": 695
+    },
+    {
+      "date": "2026-02-27",
+      "ticker": "^TWII",
+      "price": 35500
+    },
+    {
+      "date": "2026-03-06",
+      "ticker": "^TWII",
+      "price": 33548
+    },
+    {
+      "date": "2026-03-07",
+      "ticker": "0050",
+      "price": 76.85
+    },
+    {
+      "date": "2026-03-07",
+      "ticker": "0056",
+      "price": 38.63
+    },
+    {
+      "date": "2026-03-07",
+      "ticker": "3293",
+      "price": 716
+    },
+    {
+      "date": "2026-03-13",
+      "ticker": "^TWII",
+      "price": 33395
+    },
+    {
+      "date": "2026-03-13",
+      "ticker": "0050",
+      "price": 75.95
+    },
+    {
+      "date": "2026-03-13",
+      "ticker": "0056",
+      "price": 38.5
+    },
+    {
+      "date": "2026-03-13",
+      "ticker": "3293",
+      "price": 722
+    },
+    {
+      "date": "2026-03-20",
+      "ticker": "^TWII",
+      "price": 33780
+    },
+    {
+      "date": "2026-03-20",
+      "ticker": "0050",
+      "price": 75.9
+    },
+    {
+      "date": "2026-03-20",
+      "ticker": "0056",
+      "price": 38.77
+    },
+    {
+      "date": "2026-03-20",
+      "ticker": "3293",
+      "price": 744
+    },
+    {
+      "date": "2026-03-27",
+      "ticker": "^TWII",
+      "price": 32882
+    },
+    {
+      "date": "2026-03-27",
+      "ticker": "0050",
+      "price": 75
+    },
+    {
+      "date": "2026-03-27",
+      "ticker": "0056",
+      "price": 38.43
+    },
+    {
+      "date": "2026-03-27",
+      "ticker": "3293",
+      "price": 796
+    },
+    {
+      "date": "2026-03-31",
+      "ticker": "3324",
+      "price": 879
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "^TWII",
+      "price": 32534
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "0050",
+      "price": 73.95
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "0056",
+      "price": 37.82
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "3293",
+      "price": 755
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "3324",
+      "price": 910
+    },
+    {
+      "date": "2026-04-02",
+      "ticker": "8033",
+      "price": 134
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "^TWII",
+      "price": 35254
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "0050",
+      "price": 80.75
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "0056",
+      "price": 39.41
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "00631L",
+      "price": 23.7
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "3293",
+      "price": 769
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "3324",
+      "price": 990
+    },
+    {
+      "date": "2026-04-10",
+      "ticker": "8033",
+      "price": 130
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "^TWII",
+      "price": 36807
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "0050",
+      "price": 84.15
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "00631L",
+      "price": 25.59
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "3293",
+      "price": 775
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "3324",
+      "price": 1035
+    },
+    {
+      "date": "2026-04-17",
+      "ticker": "8033",
+      "price": 148
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "^TWII",
+      "price": 38605
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "0050",
+      "price": 89.95
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "00631L",
+      "price": 28.44
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "3293",
+      "price": 753
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "3324",
+      "price": 1215
+    },
+    {
+      "date": "2026-04-24",
+      "ticker": "8033",
+      "price": 154
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "^TWII",
+      "price": 38926
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "0050",
+      "price": 90.5
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "00631L",
+      "price": 28.61
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "3293",
+      "price": 748
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "3324",
+      "price": 1140
+    },
+    {
+      "date": "2026-04-30",
+      "ticker": "8033",
+      "price": 144
+    },
+    {
+      "date": "2026-05-01",
+      "ticker": "^TWII",
+      "price": 42000
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "^TWII",
+      "price": 41633
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "0050",
+      "price": 97
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "00631L",
+      "price": 32.47
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "3293",
+      "price": 735
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "3324",
+      "price": 1065
+    },
+    {
+      "date": "2026-05-08",
+      "ticker": "8033",
+      "price": 159
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "^TWII",
+      "price": 41898.32
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "0050",
+      "price": 96.85
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "00631L",
+      "price": 32.52
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "3293",
+      "price": 738
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "3324",
+      "price": 1060
+    },
+    {
+      "date": "2026-05-12",
+      "ticker": "8033",
+      "price": 141.5
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "^TWII",
+      "price": 41077
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "0050",
+      "price": 95.4
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "00631L",
+      "price": 31.26
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "3293",
+      "price": 721
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "3324",
+      "price": 995
+    },
+    {
+      "date": "2026-05-15",
+      "ticker": "8033",
+      "price": 140.5
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "^TWII",
+      "price": 40021
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "0050",
+      "price": 92.5
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "00631L",
+      "price": 29.51
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "3293",
+      "price": 728
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "3324",
+      "price": 939
+    },
+    {
+      "date": "2026-05-20",
+      "ticker": "8033",
+      "price": 133
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "^TWII",
+      "price": 42328
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "0050",
+      "price": 97.3
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "00631L",
+      "price": 32.56
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "3293",
+      "price": 748
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "3324",
+      "price": 1010
+    },
+    {
+      "date": "2026-05-22",
+      "ticker": "8033",
+      "price": 138
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "^TWII",
+      "price": 43525.37
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "0050",
+      "price": 100.1
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "00631L",
+      "price": 34.4
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "3293",
+      "price": 735
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "3324",
+      "price": 1040
+    },
+    {
+      "date": "2026-05-26",
+      "ticker": "8033",
+      "price": 136.5
+    },
+    {
+      "date": "2026-05-27",
+      "ticker": "0050",
+      "price": 102.55
+    },
+    {
+      "date": "2026-05-27",
+      "ticker": "00631L",
+      "price": 35.73
+    },
+    {
+      "date": "2026-05-27",
+      "ticker": "3293",
+      "price": 756
+    },
+    {
+      "date": "2026-05-27",
+      "ticker": "3324",
+      "price": 1035
+    },
+    {
+      "date": "2026-05-27",
+      "ticker": "8033",
+      "price": 135
+    },
+    {
+      "date": "2026-05-29",
+      "ticker": "0050",
+      "price": 105.4
+    },
+    {
+      "date": "2026-05-29",
+      "ticker": "00631L",
+      "price": 36.94
+    },
+    {
+      "date": "2026-05-29",
+      "ticker": "3293",
+      "price": 754
+    },
+    {
+      "date": "2026-05-29",
+      "ticker": "3324",
+      "price": 1065
+    },
+    {
+      "date": "2026-05-29",
+      "ticker": "8033",
+      "price": 143
+    },
+    {
+      "date": "2026-05-31",
+      "ticker": "^TWII",
+      "price": 44733
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "^TWII",
+      "price": 45337.91
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "0050",
+      "price": 105.5
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "00631L",
+      "price": 37.78
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "3293",
+      "price": 769
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "3324",
+      "price": 1145
+    },
+    {
+      "date": "2026-06-01",
+      "ticker": "8033",
+      "price": 141
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "^TWII",
+      "price": 45557.31
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "0050",
+      "price": 105.7
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "00631L",
+      "price": 37.91
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "3293",
+      "price": 799
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "3324",
+      "price": 1165
+    },
+    {
+      "date": "2026-06-02",
+      "ticker": "8033",
+      "price": 136
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "^TWII",
+      "price": 46459.16
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "0050",
+      "price": 107.6
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "00631L",
+      "price": 39.22
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "3293",
+      "price": 789
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "3324",
+      "price": 1280
+    },
+    {
+      "date": "2026-06-03",
+      "ticker": "8033",
+      "price": 134.5
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "^TWII",
+      "price": 45677.46
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "0050",
+      "price": 106.1
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "00631L",
+      "price": 38.3
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "3293",
+      "price": 800
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "3324",
+      "price": 1185
+    },
+    {
+      "date": "2026-06-04",
+      "ticker": "8033",
+      "price": 133
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "^TWII",
+      "price": 45070.94
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "0050",
+      "price": 104.15
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "00631L",
+      "price": 36.67
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "3293",
+      "price": 790
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "3324",
+      "price": 1110
+    },
+    {
+      "date": "2026-06-05",
+      "ticker": "8033",
+      "price": 134.5
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "^TWII",
+      "price": 43502.78
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "0050",
+      "price": 100.95
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "00631L",
+      "price": 33.8
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "3293",
+      "price": 780
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "3324",
+      "price": 1095
+    },
+    {
+      "date": "2026-06-08",
+      "ticker": "8033",
+      "price": 129
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "^TWII",
+      "price": 44704.44
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "0050",
+      "price": 103.5
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "00631L",
+      "price": 35.44
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "3293",
+      "price": 800
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "3324",
+      "price": 1110
+    },
+    {
+      "date": "2026-06-09",
+      "ticker": "8033",
+      "price": 132.5
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "^TWII",
+      "price": 43225.54
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "0050",
+      "price": 100.25
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "00631L",
+      "price": 33.43
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "3293",
+      "price": 799
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "3324",
+      "price": 1010
+    },
+    {
+      "date": "2026-06-10",
+      "ticker": "8033",
+      "price": 129
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "^TWII",
+      "price": 43149.46
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "0050",
+      "price": 99.85
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "00631L",
+      "price": 33.23
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "3293",
+      "price": 762
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "3324",
+      "price": 998
+    },
+    {
+      "date": "2026-06-11",
+      "ticker": "8033",
+      "price": 126.5
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "^TWII",
+      "price": 44169.04
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "0050",
+      "price": 101.95
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "00631L",
+      "price": 34.83
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "3293",
+      "price": 755
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "3324",
+      "price": 1055
+    },
+    {
+      "date": "2026-06-12",
+      "ticker": "8033",
+      "price": 129.5
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "^TWII",
+      "price": 45396.99
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "0050",
+      "price": 105.25
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "00631L",
+      "price": 37.07
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "3293",
+      "price": 751
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "3324",
+      "price": 1055
+    },
+    {
+      "date": "2026-06-15",
+      "ticker": "8033",
+      "price": 129
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "^TWII",
+      "price": 45809.19
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "0050",
+      "price": 105.9
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "00631L",
+      "price": 37.31
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "3293",
+      "price": 772
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "3324",
+      "price": 1050
+    },
+    {
+      "date": "2026-06-16",
+      "ticker": "8033",
+      "price": 125
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "^TWII",
+      "price": 45877.39
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "0050",
+      "price": 106
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "00631L",
+      "price": 37.51
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "3293",
+      "price": 775
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "3324",
+      "price": 1050
+    },
+    {
+      "date": "2026-06-17",
+      "ticker": "8033",
+      "price": 127.5
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^DJI",
+      "price": 51564.7
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^GSPC",
+      "price": 7500.58
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^IXIC",
+      "price": 26517.93
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "^TWII",
+      "price": 46465.2
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "0050",
+      "price": 107.3
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "00631L",
+      "price": 38.33
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "3293",
+      "price": 793
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "3324",
+      "price": 1070
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "8033",
+      "price": 129.5
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "AAPL",
+      "price": 298.01
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "NVDA",
+      "price": 210.69
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "SPCX",
+      "price": 185
+    },
+    {
+      "date": "2026-06-18",
+      "ticker": "TSLA",
+      "price": 400.49
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "^TWII",
+      "price": 47773.99
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "0050",
+      "price": 111
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "00631L",
+      "price": 41.06
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "3293",
+      "price": 780
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "3324",
+      "price": 1075
+    },
+    {
+      "date": "2026-06-22",
+      "ticker": "8033",
+      "price": 142
+    }
+  ],
+  "theme": "zen",
+  "marketData": {
+    "updated": "2026-06-22T04:45:29.096Z",
+    "prices": {
+      "3293": 780,
+      "3324": 1075,
+      "8033": 142,
+      "^TWII": 47773.99,
+      "^IXIC": 26517.93,
+      "^GSPC": 7500.58,
+      "^DJI": 51564.7,
+      "0050": 111,
+      "00631L": 41.06,
+      "AAPL": 298.01,
+      "NVDA": 210.69,
+      "TSLA": 400.49,
+      "SPCX": 185
+    },
+    "dates": {
+      "3293": "2026-06-22",
+      "3324": "2026-06-22",
+      "8033": "2026-06-22",
+      "^TWII": "2026-06-22",
+      "^IXIC": "2026-06-18",
+      "^GSPC": "2026-06-18",
+      "^DJI": "2026-06-18",
+      "0050": "2026-06-22",
+      "00631L": "2026-06-22",
+      "AAPL": "2026-06-18",
+      "NVDA": "2026-06-18",
+      "TSLA": "2026-06-18",
+      "SPCX": "2026-06-18"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { LayoutDashboard, Activity, Edit2, TrendingUp, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Layers, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Activity, Edit2, TrendingUp, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Layers, Trash2, Calendar, X } from 'lucide-react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -867,23 +867,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                 {/* 績效測量工具懸浮卡片 */}
                 {measurementData && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[var(--bg-secondary)]/95 border border-[var(--accent)]/50 text-[var(--text-main)] px-4 py-3 rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.4)] backdrop-blur-md text-center animate-in fade-in zoom-in-95 duration-200 min-w-[260px]">
-                    <div className="text-[11px] font-black tracking-wider flex items-center justify-center gap-1 mb-1">
-                      <span>區間個人績效：</span>
-                      <span className={cn("font-mono font-black text-sm", measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
-                        {measurementData.portfolioChange >= 0 ? '+' : ''}{measurementData.portfolioChange.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="text-[9px] text-[var(--text-dim)] font-bold">
-                      {measurementData.bars} 根K棒，{measurementData.days} 日 ({measurementData.startDate.replace(/-/g, '/')} ~ {measurementData.endDate.replace(/-/g, '/')})
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-[var(--border)] flex justify-center gap-3 text-[9px] font-black">
-                      {Object.entries(measurementData.benchChanges).map(([name, val]) => (
-                        <span key={name} className="text-[var(--text-dim)]">
-                          {name}: <span className={val >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"}>{val >= 0 ? '+' : ''}{val.toFixed(1)}%</span>
-                        </span>
-                      ))}
-                    </div>
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[var(--bg-secondary)]/95 border border-[var(--border)] text-[var(--text-main)] px-4 py-3.5 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 min-w-[280px] max-w-[320px]">
+                    {/* 關閉按鈕 */}
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -891,10 +876,83 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         setRefAreaRight(null);
                         setMeasurementData(null);
                       }}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-dim)] hover:text-[var(--danger)] border border-[var(--border)] flex items-center justify-center text-[9px] font-black cursor-pointer shadow hover:scale-110 active:scale-95 transition-all"
+                      className="absolute top-2 right-2 p-1 rounded-lg bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-[var(--text-dim)] hover:text-[var(--danger)] transition-all cursor-pointer active:scale-90"
                     >
-                      ✕
+                      <X size={12} />
                     </button>
+
+                    {/* 頂部日期與範圍資訊 */}
+                    <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-dim)] font-black uppercase tracking-wider mb-3 border-b border-[var(--border)] pb-2 pr-6">
+                      <Calendar size={10} className="text-[var(--accent)]" />
+                      <span>
+                        {measurementData.startDate.replace(/-/g, '/')} ~ {measurementData.endDate.replace(/-/g, '/')}
+                      </span>
+                      <span className="opacity-40 font-mono">({measurementData.days}天)</span>
+                    </div>
+
+                    {/* 績效數據網格對比 */}
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                      {/* 左邊：個人績效 */}
+                      <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-[var(--bg-tertiary)]/40 border border-[var(--border)]/30">
+                        <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">個人帳戶</span>
+                        <div className="flex items-center gap-0.5">
+                          <TrendingUp size={12} className={measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
+                          <span className={cn("font-mono font-black text-sm md:text-base", measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                            {measurementData.portfolioChange >= 0 ? '+' : ''}{measurementData.portfolioChange.toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 右邊：基準大盤 */}
+                      <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-[var(--bg-tertiary)]/40 border border-[var(--border)]/30">
+                        <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">對比基準</span>
+                        <div className="flex flex-col gap-0.5 justify-center items-center w-full">
+                          {Object.entries(measurementData.benchChanges).map(([name, val]) => (
+                            <div key={name} className="flex items-center gap-1 font-mono">
+                              <span className="text-[9px] font-bold text-[var(--text-dim)]">{name}</span>
+                              <span className={cn("text-[10px] font-black", val >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                {val >= 0 ? '+' : ''}{val.toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 超額收益 Alpha 計算顯示 */}
+                    {Object.entries(measurementData.benchChanges).length === 1 && (
+                      <div className="mt-3 pt-2.5 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
+                        <span className="font-black text-[var(--text-dim)] uppercase tracking-wider">超額收益 (Alpha)</span>
+                        {(() => {
+                          const firstBench = Object.entries(measurementData.benchChanges)[0];
+                          const alpha = measurementData.portfolioChange - firstBench[1];
+                          return (
+                            <span className={cn("font-mono font-black", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                              {alpha >= 0 ? '+' : ''}{alpha.toFixed(2)}%
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {Object.entries(measurementData.benchChanges).length > 1 && (
+                      <div className="mt-3 pt-2 border-t border-[var(--border)]/60 text-[8px] space-y-1">
+                        <span className="font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1">超額收益 (Alpha)</span>
+                        <div className="grid grid-cols-3 gap-1 text-center">
+                          {Object.entries(measurementData.benchChanges).map(([name, val]) => {
+                            const alpha = measurementData.portfolioChange - val;
+                            return (
+                              <div key={name} className="flex flex-col p-1 rounded bg-[var(--bg-tertiary)]/20 border border-[var(--border)]/20">
+                                <span className="text-[8px] text-[var(--text-dim)] font-bold">{name.substring(0, 2)}</span>
+                                <span className={cn("font-mono font-black text-[9px]", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                  {alpha >= 0 ? '+' : ''}{alpha.toFixed(1)}%
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
