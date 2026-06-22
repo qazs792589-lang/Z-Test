@@ -104,9 +104,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         const endPVal = 100 + (endPt.portfolioRoi || 0);
         const portfolioChange = ((endPVal / startPVal) - 1) * 100;
 
-        // Portfolio Absolute Value Change (淨交易現金流調整，排除出入金干擾)
-        const rangeCashFlow = rangeData.slice(1).reduce((sum, d) => sum + (d.cashFlow || 0), 0);
-        const portfolioAbsChange = (endPt.value || 0) - (startPt.value || 0) - rangeCashFlow;
+        // Portfolio Absolute Value Change (直接相減圖上的績效資產金額 adjustedValue)
+        const portfolioAbsChange = (endPt.adjustedValue || 0) - (startPt.adjustedValue || 0);
         
         const benchChanges: Record<string, number> = {};
         const benchAbsChanges: Record<string, number> = {};
