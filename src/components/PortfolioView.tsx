@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { LayoutDashboard, Activity, Edit2, TrendingUp, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Layers, Trash2 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -77,6 +77,72 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     portfolioChange: number;
     benchChanges: Record<string, number>;
   } | null>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleMeasurementEnd = () => {
+    if (viewMode === 'ratio' && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
+      const [start, end] = refAreaLeft.localeCompare(refAreaRight) <= 0 
+        ? [refAreaLeft, refAreaRight] 
+        : [refAreaRight, refAreaLeft];
+      
+      const rangeData = chartData.filter(d => d.name >= start && d.name <= end);
+      if (rangeData.length >= 2) {
+        const startPt = rangeData[0];
+        const endPt = rangeData[rangeData.length - 1];
+        
+        // Portfolio ROI Change
+        const startPVal = 100 + (startPt.portfolioRoi || 0);
+        const endPVal = 100 + (endPt.portfolioRoi || 0);
+        const portfolioChange = ((endPVal / startPVal) - 1) * 100;
+        
+        const benchChanges: Record<string, number> = {};
+        if (isUsSector) {
+          const startSp = 100 + (startPt.sp500Roi || 0);
+          const endSp = 100 + (endPt.sp500Roi || 0);
+          benchChanges['標普 500'] = ((endSp / startSp) - 1) * 100;
+          
+          const startNas = 100 + (startPt.nasdaqRoi || 0);
+          const endNas = 100 + (endPt.nasdaqRoi || 0);
+          benchChanges['那斯達克'] = ((endNas / startNas) - 1) * 100;
+          
+          const startDow = 100 + (startPt.dowRoi || 0);
+          const endDow = 100 + (endPt.dowRoi || 0);
+          benchChanges['道瓊工業'] = ((endDow / startDow) - 1) * 100;
+        } else {
+          const startM = 100 + (startPt.marketRoi || 0);
+          const endM = 100 + (endPt.marketRoi || 0);
+          benchChanges['台股大盤'] = ((endM / startM) - 1) * 100;
+        }
+        
+        const t1 = new Date(start).getTime();
+        const t2 = new Date(end).getTime();
+        const days = Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
+        
+        setMeasurementData({
+          startDate: start,
+          endDate: end,
+          days,
+          bars: rangeData.length,
+          portfolioChange,
+          benchChanges
+        });
+      } else {
+        setRefAreaLeft(null);
+        setRefAreaRight(null);
+      }
+    } else {
+      setRefAreaLeft(null);
+      setRefAreaRight(null);
+      setMeasurementData(null);
+    }
+  };
 
   const allTickers = useMemo(() => {
     // Get all tickers that have ever appeared in chartData
@@ -569,7 +635,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
               </div>
               
-              <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4">
+              <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4" style={{ touchAction: viewMode === 'ratio' ? 'pan-y' : 'auto' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart 
                     data={chartData} 
@@ -586,63 +652,20 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         setRefAreaRight(e.activeLabel);
                       }
                     }}
-                    onMouseUp={() => {
-                      if (viewMode === 'ratio' && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
-                        const [start, end] = refAreaLeft.localeCompare(refAreaRight) <= 0 
-                          ? [refAreaLeft, refAreaRight] 
-                          : [refAreaRight, refAreaLeft];
-                        
-                        const rangeData = chartData.filter(d => d.name >= start && d.name <= end);
-                        if (rangeData.length >= 2) {
-                          const startPt = rangeData[0];
-                          const endPt = rangeData[rangeData.length - 1];
-                          
-                          // Portfolio ROI Change
-                          const startPVal = 100 + (startPt.portfolioRoi || 0);
-                          const endPVal = 100 + (endPt.portfolioRoi || 0);
-                          const portfolioChange = ((endPVal / startPVal) - 1) * 100;
-                          
-                          const benchChanges: Record<string, number> = {};
-                          if (isUsSector) {
-                            const startSp = 100 + (startPt.sp500Roi || 0);
-                            const endSp = 100 + (endPt.sp500Roi || 0);
-                            benchChanges['標普 500'] = ((endSp / startSp) - 1) * 100;
-                            
-                            const startNas = 100 + (startPt.nasdaqRoi || 0);
-                            const endNas = 100 + (endPt.nasdaqRoi || 0);
-                            benchChanges['那斯達克'] = ((endNas / startNas) - 1) * 100;
-                            
-                            const startDow = 100 + (startPt.dowRoi || 0);
-                            const endDow = 100 + (endPt.dowRoi || 0);
-                            benchChanges['道瓊工業'] = ((endDow / startDow) - 1) * 100;
-                          } else {
-                            const startM = 100 + (startPt.marketRoi || 0);
-                            const endM = 100 + (endPt.marketRoi || 0);
-                            benchChanges['台股大盤'] = ((endM / startM) - 1) * 100;
-                          }
-                          
-                          const t1 = new Date(start).getTime();
-                          const t2 = new Date(end).getTime();
-                          const days = Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
-                          
-                          setMeasurementData({
-                            startDate: start,
-                            endDate: end,
-                            days,
-                            bars: rangeData.length,
-                            portfolioChange,
-                            benchChanges
-                          });
-                        } else {
-                          setRefAreaLeft(null);
-                          setRefAreaRight(null);
-                        }
-                      } else {
-                        setRefAreaLeft(null);
-                        setRefAreaRight(null);
+                    onMouseUp={handleMeasurementEnd}
+                    onTouchStart={(e: any) => {
+                      if (viewMode === 'ratio' && e && e.activeLabel) {
+                        setRefAreaLeft(e.activeLabel);
+                        setRefAreaRight(e.activeLabel);
                         setMeasurementData(null);
                       }
                     }}
+                    onTouchMove={(e: any) => {
+                      if (viewMode === 'ratio' && refAreaLeft && e && e.activeLabel) {
+                        setRefAreaRight(e.activeLabel);
+                      }
+                    }}
+                    onTouchEnd={handleMeasurementEnd}
                   >
                     <defs>
                       <linearGradient id="colorRoi" x1="0" y1="0" x2="0" y2="1">
@@ -697,17 +720,18 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     )}
                     <Tooltip
                       cursor={{ stroke: 'var(--border)', strokeWidth: 1 }}
+                      position={isMobile ? { x: 10, y: 10 } : undefined}
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl border-opacity-50">
+                            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-2.5 md:p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl border-opacity-50 max-w-[230px] md:max-w-none">
                               <div className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest border-b border-[var(--border)] pb-2.5 mb-3 flex items-center justify-between gap-8">
                                 <span>{label?.toString().replace(/-/g, '/')}</span>
                                 <span className="opacity-40 font-mono text-[8px]">SNAPSHOT</span>
                               </div>
-                              <div className="space-y-3">
+                              <div className={cn("space-y-3", isMobile && "space-y-1.5")}>
                                 {payload.map((item: any, idx: number) => (
-                                  <div key={idx} className="flex items-center justify-between gap-12">
+                                  <div key={idx} className={cn("flex items-center justify-between gap-12", isMobile && "gap-6")}>
                                     <div className="flex items-center gap-2.5">
                                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color || '#888' }} />
                                       <span className="text-[11px] font-bold text-[var(--text-main)]">{item.name}</span>
@@ -721,12 +745,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                   </div>
                                 ))}
                                 {viewMode === 'ratio' && payload.length >= 2 && (
-                                  <div className="border-t border-[var(--border)] pt-3 mt-1 space-y-1.5">
+                                  <div className={cn("border-t border-[var(--border)] pt-3 mt-1 space-y-1.5", isMobile && "pt-2 mt-1 space-y-1")}>
                                     <span className="text-[10px] font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1.5">超額收益 (Alpha)</span>
                                     {payload.slice(1).map((item: any, idx: number) => {
                                       const alpha = (payload[0].value || 0) - (item.value || 0);
                                       return (
-                                        <div key={idx} className="flex items-center justify-between gap-12">
+                                        <div key={idx} className={cn("flex items-center justify-between gap-12", isMobile && "gap-6")}>
                                           <span className="text-[10px] font-bold text-[var(--text-dim)]">vs {item.name}</span>
                                           <span className={cn("text-xs font-mono font-black", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                             {alpha >= 0 ? '+' : ''}{alpha.toFixed(2)}%
