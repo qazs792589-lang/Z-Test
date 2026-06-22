@@ -159,7 +159,7 @@ export const TickerPillList: React.FC<TickerPillListProps> = ({
           className="px-3 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-dim)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm active:scale-95"
         >
           <Database size={10} />
-          {showZero ? "收起已清倉" : "顯示已清倉"}
+          {showZero ? "收起" : "顯示"}
         </button>
       )}
     </div>

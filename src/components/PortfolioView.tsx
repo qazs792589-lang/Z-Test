@@ -87,7 +87,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   }, []);
 
   const handleMeasurementEnd = () => {
-    if (viewMode === 'ratio' && refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
+    if (refAreaLeft && refAreaRight && refAreaLeft !== refAreaRight) {
       const [start, end] = refAreaLeft.localeCompare(refAreaRight) <= 0 
         ? [refAreaLeft, refAreaRight] 
         : [refAreaRight, refAreaLeft];
@@ -635,33 +635,33 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
               </div>
               
-              <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4" style={{ touchAction: viewMode === 'ratio' ? 'pan-y' : 'auto' }}>
+              <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4" style={{ touchAction: 'pan-y' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart 
                     data={chartData} 
                     margin={{ top: 30, right: 10, left: 15, bottom: 20 }}
                     onMouseDown={(e: any) => {
-                      if (viewMode === 'ratio' && e && e.activeLabel) {
+                      if (e && e.activeLabel) {
                         setRefAreaLeft(e.activeLabel);
                         setRefAreaRight(e.activeLabel);
                         setMeasurementData(null);
                       }
                     }}
                     onMouseMove={(e: any) => {
-                      if (viewMode === 'ratio' && refAreaLeft && e && e.activeLabel) {
+                      if (refAreaLeft && e && e.activeLabel) {
                         setRefAreaRight(e.activeLabel);
                       }
                     }}
                     onMouseUp={handleMeasurementEnd}
                     onTouchStart={(e: any) => {
-                      if (viewMode === 'ratio' && e && e.activeLabel) {
+                      if (e && e.activeLabel) {
                         setRefAreaLeft(e.activeLabel);
                         setRefAreaRight(e.activeLabel);
                         setMeasurementData(null);
                       }
                     }}
                     onTouchMove={(e: any) => {
-                      if (viewMode === 'ratio' && refAreaLeft && e && e.activeLabel) {
+                      if (refAreaLeft && e && e.activeLabel) {
                         setRefAreaRight(e.activeLabel);
                       }
                     }}
@@ -850,7 +850,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         />
                       </>
                     )}
-                    {viewMode === 'ratio' && refAreaLeft && refAreaRight && (
+                    {refAreaLeft && refAreaRight && (
                       <ReferenceArea 
                         yAxisId="left"
                         x1={refAreaLeft} 
@@ -905,17 +905,35 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                       {/* 右邊：基準大盤 */}
                       <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-[var(--bg-tertiary)]/40 border border-[var(--border)]/30">
-                        <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">對比基準</span>
-                        <div className="flex flex-col gap-0.5 justify-center items-center w-full">
-                          {Object.entries(measurementData.benchChanges).map(([name, val]) => (
-                            <div key={name} className="flex items-center gap-1 font-mono">
-                              <span className="text-[9px] font-bold text-[var(--text-dim)]">{name}</span>
-                              <span className={cn("text-[10px] font-black", val >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
-                                {val >= 0 ? '+' : ''}{val.toFixed(1)}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                        <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">
+                          {isUsSector ? '對比基準' : '台股大盤'}
+                        </span>
+                        {!isUsSector ? (
+                          <div className="flex items-center gap-0.5">
+                            {(() => {
+                              const twChange = measurementData.benchChanges['台股大盤'] || 0;
+                              return (
+                                <>
+                                  <TrendingUp size={12} className={twChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
+                                  <span className={cn("font-mono font-black text-sm md:text-base", twChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                    {twChange >= 0 ? '+' : ''}{twChange.toFixed(2)}%
+                                  </span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-0.5 justify-center items-center w-full">
+                            {Object.entries(measurementData.benchChanges).map(([name, val]) => (
+                              <div key={name} className="flex items-center gap-1 font-mono">
+                                <span className="text-[9px] font-bold text-[var(--text-dim)]">{name}</span>
+                                <span className={cn("text-[10px] font-black", val >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                  {val >= 0 ? '+' : ''}{val.toFixed(1)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
