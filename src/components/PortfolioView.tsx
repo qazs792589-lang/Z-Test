@@ -105,7 +105,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         const portfolioChange = ((endPVal / startPVal) - 1) * 100;
 
         // Portfolio Absolute Value Change
-        const portfolioAbsChange = (endPt.value || 0) - (startPt.value || 0);
+        const portfolioAbsChange = (startPt.value || 0) * (portfolioChange / 100);
         
         const benchChanges: Record<string, number> = {};
         const benchAbsChanges: Record<string, number> = {};
