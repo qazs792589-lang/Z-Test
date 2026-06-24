@@ -671,6 +671,7 @@ export default function App() {
       const breakdown: Record<string, number> = {};
 
       const tickers = Object.keys(targetAppData.stockGroups);
+      let cumulativeRealizedPL = 0;
 
       tickers.forEach(ticker => {
         const txs = targetAppData.stockGroups[ticker] || [];
@@ -678,6 +679,7 @@ export default function App() {
 
         let shares = 0;
         let cost = 0;
+        let tickerRealizedPL = 0;
 
         pastTxs.forEach(t => {
           if (t.direction === 'BUY') {
@@ -685,14 +687,28 @@ export default function App() {
             cost += t.totalAmount;
           } else if (t.direction === 'SELL') {
             const currentAvg = shares > 0 ? cost / shares : 0;
+            const sellRevenue = Math.abs(t.totalAmount);
+            const costBasis = currentAvg * t.quantity;
+            const profit = sellRevenue - costBasis;
+            if (t.date >= '2026-01-01') {
+              tickerRealizedPL += profit;
+            }
+
             shares -= t.quantity;
-            cost -= (currentAvg * t.quantity);
+            cost -= costBasis;
           } else if (t.direction === 'DIVIDEND') {
-            if (!t.isManualRealized) {
+            const isRealized = t.isManualRealized !== undefined ? t.isManualRealized : true;
+            if (isRealized) {
+              if (t.date >= '2026-01-01') {
+                tickerRealizedPL += Math.abs(t.totalAmount);
+              }
+            } else {
               cost -= Math.abs(t.totalAmount);
             }
           }
         });
+
+        cumulativeRealizedPL += tickerRealizedPL;
 
         if (shares > 0) {
           const priceEntry = weeklyPrices
@@ -714,6 +730,7 @@ export default function App() {
         value: Math.floor(totalValue),
         cost: Math.floor(totalCost),
         profit: Math.floor(totalValue - totalCost),
+        realizedProfit: Math.floor(cumulativeRealizedPL),
         portfolioRoi: totalCost > 0 ? ((totalValue / totalCost) - 1) * 100 : 0,
         breakdown
       };
@@ -805,6 +822,7 @@ export default function App() {
         cashFlow,
         portfolioRoi: nav - 100,
         adjustedValue,
+        totalPL: d.profit + (d.realizedProfit || 0),
         marketRoi,
         marketPrice: curTw,
         nasdaqRoi,
