@@ -18,7 +18,7 @@ export const useTransactionForm = (configs: Record<TransactionCategory, Config>)
 
   const preview = useMemo(() => {
     const subtotal = formData.unitPrice * formData.quantity;
-    const config = configs[formData.category];
+    const config = configs[formData.category] || configs['General'];
     let fee = 0;
     let tax = 0;
 
@@ -80,7 +80,7 @@ export const useTransactionForm = (configs: Record<TransactionCategory, Config>)
       ? '股息領取無需付給券商手續費'
       : fee === config.minFee
         ? `手續費不足 ${config.minFee} 元，以最低 ${config.minFee} 元計收。`
-        : `成交金額 $${subtotal.toLocaleString()} 乘以費率 ${configs[formData.category].buyFeeRate * 100}% 再打 ${configs[formData.category].discount * 10} 折。`;
+        : `成交金額 $${subtotal.toLocaleString()} 乘以費率 ${config.buyFeeRate * 100}% 再打 ${config.discount * 10} 折。`;
 
     const taxFormulaPlain = formData.manualTax !== '' && formData.direction === 'SELL'
       ? `已使用手動輸入的證券交易稅 $${tax.toLocaleString()}。`
