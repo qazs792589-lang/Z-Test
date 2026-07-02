@@ -14,8 +14,9 @@ export const useTransactionForm = (configs: Record<TransactionCategory, Config>)
     customTax: 0,
     manualFee: '' as string | number,
     manualTax: '' as string | number,
-    currency: 'TWD' as 'TWD' | 'USD', // 台股或美股
-    twdRate: 31.5, // 美股對台幣匯率
+    currency: 'TWD' as 'TWD' | 'USD',
+    twdRate: 31.5,
+    twdAmount: 0, // 美股時由使用者直接輸入的實際台幣結算金額
     notes: '' as string
   });
 

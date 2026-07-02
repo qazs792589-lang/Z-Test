@@ -883,8 +883,8 @@ export default function App() {
       totalAmount: preview.total,
       notes: formData.notes,
       currency: formData.currency,
-      twdRate: formData.currency === 'USD' ? formData.twdRate : undefined,
-      twdAmount: formData.currency === 'USD' ? parseFloat((formData.unitPrice * formData.quantity * formData.twdRate).toFixed(2)) : undefined,
+      twdRate: undefined, // 不再儲存匯率
+      twdAmount: formData.currency === 'USD' && formData.twdAmount > 0 ? formData.twdAmount : undefined,
       // Preserve realized status if editing
       isManualRealized: editingTxId ? transactions.find(t => t.id === editingTxId)?.isManualRealized : undefined
     };
@@ -903,10 +903,11 @@ export default function App() {
       ticker: '',
       name: '',
       unitPrice: 0,
-      quantity: 1000,
+      quantity: prev.currency === 'USD' ? 1 : 1000,
       notes: '',
       manualFee: '',
-      manualTax: ''
+      manualTax: '',
+      twdAmount: 0
     }));
   };
 
@@ -1002,7 +1003,8 @@ export default function App() {
       manualFee: tx.fee,
       manualTax: tx.direction === 'SELL' ? tx.tax : '',
       currency: tx.currency || 'TWD',
-      twdRate: tx.twdRate || 31.5,
+      twdRate: 31.5,
+      twdAmount: tx.twdAmount || 0,
       notes: tx.notes || ''
     });
     setActiveView('A');
@@ -1331,10 +1333,27 @@ export default function App() {
               <div>
                 <h2 className="text-xl font-black mb-4 flex items-center gap-3 text-[var(--text-main)] transition-all">
                   {editingTxId ? (
-                    <><Edit2 className="text-orange-500 animate-pulse" /> <span className="text-orange-500">編輯交易紀錄</span> <span className="text-[10px] bg-orange-500/20 text-orange-500 px-3 py-1 rounded-full ml-auto font-bold uppercase tracking-widest">編輯模式</span></>
+                    <><Edit2 className="text-orange-500 animate-pulse" /> <span className="text-orange-500">編輯交易紀錄</span></>
                   ) : (
                     <><Plus className="text-[var(--accent)]" /> 交易/明細</>
                   )}
+                  <div className="flex bg-[var(--bg-primary)] p-0.5 border border-[var(--border)] rounded h-[30px] items-stretch gap-0.5 ml-1">
+                    {(['TWD', 'USD'] as const).map(cur => (
+                      <button
+                        key={cur}
+                        onClick={() => setFormData({ ...formData, currency: cur, quantity: cur === 'USD' ? 1 : 1000 })}
+                        className={cn(
+                          "px-3 flex items-center justify-center text-[10px] font-black rounded transition-all",
+                          formData.currency === cur
+                            ? (cur === 'TWD' ? "bg-[var(--accent)] text-[var(--bg-primary)]" : "bg-blue-500 text-white")
+                            : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
+                        )}
+                      >
+                        {cur === 'TWD' ? '🇹🇼 台股' : '🇺🇸 美股'}
+                      </button>
+                    ))}
+                  </div>
+                  {editingTxId && <span className="text-[10px] bg-orange-500/20 text-orange-500 px-3 py-1 rounded-full ml-auto font-bold uppercase tracking-widest">編輯模式</span>}
                 </h2>
 
                 <div className={cn("elegant-card space-y-6 transition-all", editingTxId && "border-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.1)]")}>
@@ -1384,7 +1403,20 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* 備註 (移至日期上方) */}
+                  <div>
+                    <label className="elegant-label text-xs">備註 (Notes)</label>
+                    <input
+                      type="text"
+                      className="elegant-input w-full h-[42px] text-sm"
+                      placeholder="e.g. 分批買入, 突破買入..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    />
+                  </div>
+
+                  {/* 交易日期 + 美股台幣結算金額 */}
+                  <div className={cn("grid gap-4", formData.currency === 'USD' ? "grid-cols-2" : "grid-cols-1")}>
                     <div>
                       <label className="elegant-label text-xs">交易日期</label>
                       <div
@@ -1409,41 +1441,23 @@ export default function App() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="elegant-label text-xs">備註 (Notes)</label>
-                      <input
-                        type="text"
-                        className="elegant-input w-full h-[42px] text-sm"
-                        placeholder="e.g. 分批買入, 突破買入..."
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      />
-                    </div>
+                    {formData.currency === 'USD' && (
+                      <div>
+                        <label className="elegant-label text-xs">台幣結算金額 (NT$)</label>
+                        <input
+                          type="number"
+                          className="elegant-input w-full h-[42px] text-sm"
+                          placeholder="e.g. 150000"
+                          step="1"
+                          value={formData.twdAmount || ''}
+                          onChange={(e) => setFormData({ ...formData, twdAmount: Number(e.target.value) })}
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  {/* 台股 / 美股切換 */}
-                  <div className="flex items-center gap-3">
-                    <label className="elegant-label mb-0">市場</label>
-                    <div className="flex bg-[var(--bg-primary)] p-1 border border-[var(--border)] rounded h-[38px] items-stretch gap-0.5">
-                      {(['TWD', 'USD'] as const).map(cur => (
-                        <button
-                          key={cur}
-                          onClick={() => setFormData({ ...formData, currency: cur, quantity: cur === 'USD' ? 1 : 1000 })}
-                          className={cn(
-                            "px-4 flex items-center justify-center text-[11px] font-black rounded transition-all",
-                            formData.currency === cur
-                              ? (cur === 'TWD' ? "bg-[var(--accent)] text-[var(--bg-primary)]" : "bg-blue-500 text-white")
-                              : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
-                          )}
-                        >
-                          {cur === 'TWD' ? '🇹🇼 台股' : '🇺🇸 美股'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className={cn("grid gap-3", formData.currency === 'USD' ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-3")}>
-                    <div className={cn(formData.currency === 'USD' ? "col-span-2 md:col-span-1" : "col-span-2 md:col-span-1")}>
+                  <div className={cn("grid gap-3", formData.currency === 'USD' ? "grid-cols-2 md:grid-cols-3" : "grid-cols-2 md:grid-cols-3")}>
+                    <div className="col-span-2 md:col-span-1">
                       <label className="elegant-label">交易方向</label>
                       <div className="flex bg-[var(--bg-primary)] p-1 border border-[var(--border)] rounded h-[46px] items-stretch">
                         {(['BUY', 'SELL', 'DIVIDEND'] as TransactionDirection[]).map(dir => (
@@ -1484,26 +1498,7 @@ export default function App() {
                         onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
                       />
                     </div>
-                    {formData.currency === 'USD' && (
-                      <div>
-                        <label className="elegant-label">台幣匯率 (USD/TWD)</label>
-                        <input
-                          type="number"
-                          className="elegant-input h-[46px]"
-                          step="0.01"
-                          value={formData.twdRate || ''}
-                          onChange={(e) => setFormData({ ...formData, twdRate: Number(e.target.value) })}
-                        />
-                      </div>
-                    )}
                   </div>
-                  {formData.currency === 'USD' && formData.unitPrice > 0 && formData.quantity > 0 && formData.twdRate > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 font-mono">
-                      <span className="font-black">≈ 台幣</span>
-                      <span className="text-sm font-black">NT${(formData.unitPrice * formData.quantity * formData.twdRate).toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</span>
-                      <span className="opacity-50 ml-1">({formData.unitPrice.toFixed(2)} × {formData.quantity} × {formData.twdRate})</span>
-                    </div>
-                  )}
 
                   <div className="bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-xl p-6 relative overflow-hidden">
                     <div className="relative z-10">
@@ -1649,10 +1644,8 @@ export default function App() {
                       
                       // 判斷是否為美股（取該 ticker 交易中有 USD currency 的）
                       const isUS = (txs as Transaction[]).some(t => t.currency === 'USD');
-                      // 取最新交易的台幣匯率（用於換算市值）
-                      const latestTwdRate = isUS
-                        ? [...(txs as Transaction[])].filter(t => t.currency === 'USD' && t.twdRate).sort((a, b) => b.date.localeCompare(a.date))[0]?.twdRate
-                        : undefined;
+                      // 因為不再儲存匯率，台幣換算提示移除
+                      const latestTwdRate: number | undefined = undefined;
 
                       return (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
