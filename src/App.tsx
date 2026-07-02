@@ -1021,8 +1021,8 @@ export default function App() {
       }
     });
     const heldTickers = Array.from(tickers) as string[];
-    // 永遠加入台美股大盤指數，確保歷史股價 (weeklyPrices) 補登與更新時會包含它們
-    ['^TWII', '^IXIC', '^GSPC', '^DJI'].forEach(idx => {
+    // 永遠加入台美股大盤指數與 QQQM，確保歷史股價 (weeklyPrices) 補登與更新時會包含它們
+    ['^TWII', '^IXIC', '^GSPC', '^DJI', 'QQQM'].forEach(idx => {
       if (!heldTickers.includes(idx)) heldTickers.push(idx);
     });
 

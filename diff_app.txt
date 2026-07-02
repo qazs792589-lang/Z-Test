@@ -1,0 +1,464 @@
+﻿diff --git "a/e:\\Google Antigravity\350\263\207\346\226\231\\Z-Money-\\src\\App.tsx" "b/e:\\Google Antigravity\350\263\207\346\226\231\\Money test\\src\\App.tsx"
+index a3847dd..2cd6a11 100644
+--- "a/e:\\Google Antigravity\350\263\207\346\226\231\\Z-Money-\\src\\App.tsx"	
++++ "b/e:\\Google Antigravity\350\263\207\346\226\231\\Money test\\src\\App.tsx"	
+@@ -3,43 +3,30 @@
+  * SPDX-License-Identifier: Apache-2.0
+  */
+ 
+-import React, { useState, useMemo, useEffect, useRef } from 'react';
+-import { useDragControls } from 'motion/react';
++import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+ import {
+   Plus,
+   History,
+   LayoutDashboard,
+   TrendingUp,
+-  Activity,
+   Database,
+-  ArrowUpRight,
+-  ArrowDownRight,
+   Calculator,
+   Briefcase,
+   Menu,
+   X,
+-  Calendar,
+   Check,
+-  Target,
+   Edit2,
+-  Trash2,
+   Palette,
+   FileUp,
+-  Search,
+   Tag,
+   Hash,
+   Settings as SettingsIcon,
+   Skull,
+-  CheckCircle2,
+-  Archive
++  Shield,
++  AlertCircle,
++  Trash2,
++  Globe
+ } from 'lucide-react';
+-
+-declare global {
+-  interface Window {
+-    XLSX: any;
+-  }
+-}
+-const XLSX = (window as any).XLSX;
+ import {
+   ResponsiveContainer,
+   ComposedChart,
+@@ -55,7 +42,7 @@ import {
+   ReferenceDot,
+   Legend
+ } from 'recharts';
+-import { motion, AnimatePresence, Reorder } from 'motion/react';
++import { AnimatePresence } from 'motion/react';
+ import { cn } from './lib/utils';
+ import {
+   Transaction,
+@@ -75,12 +62,11 @@ import { TickerPillList } from './components/TickerPillList';
+ import { PortfolioView } from './components/PortfolioView';
+ import { RealizedView } from './components/RealizedView';
+ import { LockScreen } from './components/LockScreen';
+-import { Shield, Lock as LockIcon, Unlock as UnlockIcon, AlertCircle } from 'lucide-react';
+ import { isTxRealized } from './lib/txUtils';
+ 
+ 
+ export default function App() {
+-  const [activeView, setActiveView] = useState<'A' | 'B' | 'C'>('A');
++  const [activeView, setActiveView] = useState<'A' | 'B' | 'C' | 'D' | 'E'>('A');
+   const [transactions, setTransactions] = useState<Transaction[]>(() => {
+     const saved = localStorage.getItem('z_money_transactions');
+     return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
+@@ -352,44 +338,7 @@ export default function App() {
+     return () => clearTimeout(timer);
+   }, [transactions, tickerOrder, tickerMetadata, netWorthEntries, weeklyPrices, theme, marketData]);
+ 
+-  // ????耨甇?LocalStorage 銝剛◤?航炊?駁???5/26 ?風?脰??(? 5/26 撠?嗥)
+-  useEffect(() => {
+-    const now = new Date();
+-    // ?啁?? UTC+8
+-    const twTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+-    const hour = twTime.getUTCHours();
+-    const todayStr = twTime.toISOString().split('T')[0];
+-    
+-    // 憒?隞予??5/26 銝??芣??(銝??拚???
+-    if (todayStr === '2026-05-26' && hour < 14) {
+-      setWeeklyPrices(prev => {
+-        let changed = false;
+-        const next = prev.map(wp => {
+-          if (wp.date === '2026-05-26') {
+-            changed = true;
+-            return { ...wp, date: '2026-05-25' };
+-          }
+-          return wp;
+-        });
+-        
+-        if (changed) {
+-          // ?蔥????5/25 蝝?蒂??
+-          const unique = [];
+-          const seen = new Set();
+-          next.forEach(wp => {
+-            const key = `${wp.date}-${wp.ticker}`;
+-            if (!seen.has(key)) {
+-              seen.add(key);
+-              unique.push(wp);
+-            }
+-          });
+-          console.log('[鞈?靽格迤] 撌脰???航炊??2026-05-26 甇瑕蝝?耨甇?蒂?蔥??2026-05-25');
+-          return unique.sort((a, b) => a.date.localeCompare(b.date));
+-        }
+-        return prev;
+-      });
+-    }
+-  }, []);
++
+ 
+   const fileInputRef = useRef<HTMLInputElement>(null);
+   const weeklyFileInputRef = useRef<HTMLInputElement>(null);
+@@ -679,70 +628,52 @@ export default function App() {
+ 
+   // Derived Calculations & Logic extracted to custom hooks
+   const { formData, setFormData, preview } = useTransactionForm(configs);
+-  const { appData, stats } = usePortfolioCalculations(transactions, marketData, weeklyPrices);
+-
+-  // Dynamic Chart Data for Dashboard (Mock historical trend based on current stats)
+-  const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
+-  const [manualPrice, setManualPrice] = useState('');
+-
+-  const addWeeklyPrice = (ticker: string) => {
+-    if (!manualDate || !manualPrice) return;
+-
+-    const newPriceEntry = {
+-      date: manualDate,
+-      price: parseFloat(manualPrice)
+-    };
+ 
+-    const updatedGroups = { ...appData.stockGroups };
+-    if (!updatedGroups[ticker].weeklyPrices) {
+-      updatedGroups[ticker].weeklyPrices = [];
+-    }
+-
+-    // ?踹????交?
+-    updatedGroups[ticker].weeklyPrices = [
+-      ...updatedGroups[ticker].weeklyPrices.filter(p => p.date !== manualDate),
+-      newPriceEntry
+-    ].sort((a, b) => a.date.localeCompare(b.date));
+-
+-    // saveData({ ...appData, stockGroups: updatedGroups });
+-    setManualPrice('');
++  // 蝢?文??摩
++  const isUsStock = (ticker: string) => {
++    const clean = ticker.trim().toUpperCase();
++    if (['?暸?', 'CASH', 'TWD', 'USD', '^TWII', '^IXIC', '^GSPC', '^DJI'].includes(clean)) return false;
++    if (/^[\u4e00-\u9fa5]+$/.test(clean)) return false;
++    if (/^\d+[A-Z]?$/.test(clean)) return false;
++    if (clean.endsWith('.TW') || clean.endsWith('.TWO')) return false;
++    return true;
+   };
+ 
+-  const handleDeleteTransaction = (id: string) => {
+-    if (window.confirm('蝣箏?閬?日?鈭斗?蝝??嚗?)) {
+-      setTransactions(prev => prev.filter(t => t.id !== id));
+-    }
+-  };
++  // 鈭斗?鞈??嚗?∟?蝢
++  const twTransactions = useMemo(() => transactions.filter(t => !isUsStock(t.ticker)), [transactions]);
++  const usTransactions = useMemo(() => transactions.filter(t => isUsStock(t.ticker)), [transactions]);
+ 
+-  const handleDeleteHolding = (ticker: string) => {
+-    const stockName = appData.stockGroups[ticker]?.transactions?.[0]?.name || ticker;
+-    if (window.confirm(`蝣箏?閬??${stockName} (${ticker}) ???漱??????嚗)) {
+-      setTransactions(prev => prev.filter(t => t.ticker !== ticker));
+-      setWeeklyPrices(prev => prev.filter(wp => wp.ticker !== ticker));
+-      if (selectedTicker === ticker) setSelectedTicker(null);
+-    }
+-  };
++  // ??箏?∟?蝢閮?
++  const twCalculations = usePortfolioCalculations(twTransactions, marketData, weeklyPrices);
++  const usCalculations = usePortfolioCalculations(usTransactions, marketData, weeklyPrices);
++
++  // ?蔥??蝞?(?冽?湧?撌脣祕?暹????嗡??典??豢?)
++  const { appData, stats } = usePortfolioCalculations(transactions, marketData, weeklyPrices);
+ 
+-  const chartData = useMemo(() => {
+-    // 1. Get a unique sorted timeline from both weekly prices AND transactions
++  // ?甇瑕鞈?皞粥?Ｗ??豢?????+  const generateChartData = useCallback((
++    targetAppData: any,
++    targetTransactions: any[],
++    isUs: boolean = false
++  ) => {
++    // 1. Get a unique sorted timeline
+     const allDates = new Set<string>();
+     weeklyPrices.forEach(wp => allDates.add(wp.date));
+-    transactions.forEach(tx => allDates.add(tx.date));
++    targetTransactions.forEach(tx => allDates.add(tx.date));
+ 
+     const timeline = Array.from(allDates).sort();
+     if (timeline.length === 0) return [];
+ 
+     // 2. For each point in the timeline, calculate portfolio status
+-    return timeline.map(date => {
++    const rawChartData = timeline.map(date => {
+       let totalValue = 0;
+       let totalCost = 0;
+       const breakdown: Record<string, number> = {};
+ 
+-      // Group transactions by ticker for easier processing
+-      const tickers = Object.keys(appData.stockGroups);
++      const tickers = Object.keys(targetAppData.stockGroups);
+ 
+       tickers.forEach(ticker => {
+-        const txs = appData.stockGroups[ticker] || [];
++        const txs = targetAppData.stockGroups[ticker] || [];
+         const pastTxs = txs.filter(t => t.date <= date);
+ 
+         let shares = 0;
+@@ -758,15 +689,12 @@ export default function App() {
+             cost -= (currentAvg * t.quantity);
+           } else if (t.direction === 'DIVIDEND') {
+             if (!t.isManualRealized) {
+-              // Use Math.abs to handle inconsistent signs in backup data (some +, some -)
+-              // Dividends should ALWAYS reduce the cost basis in net outlay approach
+               cost -= Math.abs(t.totalAmount);
+             }
+           }
+         });
+ 
+         if (shares > 0) {
+-          // Find the price for this ticker on or before this date
+           const priceEntry = weeklyPrices
+             .filter(wp => wp.ticker === ticker && wp.date <= date)
+             .sort((a, b) => b.date.localeCompare(a.date))[0];
+@@ -790,56 +718,77 @@ export default function App() {
+         breakdown
+       };
+     });
+-  }, [appData.stockGroups, weeklyPrices]);
+ 
+-  const finalChartData = useMemo(() => {
+-    // 1. Filter raw chartData to start from 2026
+-    const filteredBaseData = chartData.filter(d => d.name >= '2026-01-01');
++    // 3. Filter raw chartData to start from 2026
++    const filteredBaseData = rawChartData.filter(d => d.name >= '2026-01-01');
+     if (filteredBaseData.length === 0) return [];
+ 
+-    // 2. Calculate Market ROI (TAIEX) relative to the NEW first date
+-    const benchmarkPrices = weeklyPrices.filter(p => p.ticker === '^TWII').sort((a, b) => a.date.localeCompare(b.date));
+     const firstDate = filteredBaseData[0].name;
+-    const baseMarketPriceEntry = benchmarkPrices.filter(p => p.date <= firstDate).reverse()[0] || benchmarkPrices[0];
+-    const baseMarketPrice = baseMarketPriceEntry?.price || 1;
+ 
+-    // 3. Calculate Portfolio TWR (Unitized NAV)
+-    let nav = 100;
+-    let prevTotalValue = filteredBaseData[0].value;
++    // ?箸??寞摰? helper
++    const getBasePrice = (ticker: string) => {
++      const bPrices = weeklyPrices.filter(p => p.ticker === ticker).sort((a, b) => a.date.localeCompare(b.date));
++      const baseEntry = bPrices.filter(p => p.date <= firstDate).reverse()[0] || bPrices[0];
++      return baseEntry?.price || 1;
++    };
+ 
+-    return filteredBaseData.map((d, idx) => {
+-      const currentTxs = transactions.filter(t => t.date === d.name);
+-      let cashFlow = 0;
+-      currentTxs.forEach(t => {
+-        if (t.direction === 'BUY') cashFlow += Math.abs(t.totalAmount);
+-        if (t.direction === 'SELL') cashFlow -= Math.abs(t.totalAmount);
+-        if (t.direction === 'DIVIDEND') cashFlow -= Math.abs(t.totalAmount);
+-      });
++    const baseTwPrice = getBasePrice('^TWII');
++    const baseNasdaqPrice = getBasePrice('^IXIC');
++    const baseSp500Price = getBasePrice('^GSPC');
++    const baseDowPrice = getBasePrice('^DJI');
+ 
+-      // Linear Interpolation for Market Price to avoid step-like appearance
+-      let currentMarketPrice = baseMarketPrice;
+-      const exactEntry = benchmarkPrices.find(p => p.date === d.name);
++    const twPrices = weeklyPrices.filter(p => p.ticker === '^TWII').sort((a, b) => a.date.localeCompare(b.date));
++    const nasdaqPrices = weeklyPrices.filter(p => p.ticker === '^IXIC').sort((a, b) => a.date.localeCompare(b.date));
++    const sp500Prices = weeklyPrices.filter(p => p.ticker === '^GSPC').sort((a, b) => a.date.localeCompare(b.date));
++    const dowPrices = weeklyPrices.filter(p => p.ticker === '^DJI').sort((a, b) => a.date.localeCompare(b.date));
+ 
++    // 蝺扳??澆?敺??交??賊??貊? helper
++    const getInterpolatedPrice = (dateStr: string, bPrices: any[], basePrice: number) => {
++      let currentPrice = basePrice;
++      const exactEntry = bPrices.find(p => p.date === dateStr);
+       if (exactEntry) {
+-        currentMarketPrice = exactEntry.price;
++        currentPrice = exactEntry.price;
+       } else {
+-        const prevEntry = benchmarkPrices.filter(p => p.date < d.name).reverse()[0];
+-        const nextEntry = benchmarkPrices.find(p => p.date > d.name);
+-
++        const prevEntry = bPrices.filter(p => p.date < dateStr).reverse()[0];
++        const nextEntry = bPrices.find(p => p.date > dateStr);
+         if (prevEntry && nextEntry) {
+           const t1 = new Date(prevEntry.date).getTime();
+           const t2 = new Date(nextEntry.date).getTime();
+-          const tCur = new Date(d.name).getTime();
++          const tCur = new Date(dateStr).getTime();
+           const ratio = (tCur - t1) / (t2 - t1);
+-          currentMarketPrice = prevEntry.price + (nextEntry.price - prevEntry.price) * ratio;
++          currentPrice = prevEntry.price + (nextEntry.price - prevEntry.price) * ratio;
+         } else if (prevEntry) {
+-          currentMarketPrice = prevEntry.price;
++          currentPrice = prevEntry.price;
+         } else if (nextEntry) {
+-          currentMarketPrice = nextEntry.price;
++          currentPrice = nextEntry.price;
+         }
+       }
++      return currentPrice;
++    };
++
++    let nav = 100;
++    let prevTotalValue = filteredBaseData[0].value;
+ 
+-      const marketRoi = ((currentMarketPrice / baseMarketPrice) - 1) * 100;
++    const baseValue = filteredBaseData[0]?.value || 0;
++
++    return filteredBaseData.map((d, idx) => {
++      const currentTxs = targetTransactions.filter(t => t.date === d.name);
++      let cashFlow = 0;
++      currentTxs.forEach(t => {
++        if (t.direction === 'BUY') cashFlow += Math.abs(t.totalAmount);
++        if (t.direction === 'SELL') cashFlow -= Math.abs(t.totalAmount);
++        if (t.direction === 'DIVIDEND') cashFlow -= Math.abs(t.totalAmount);
++      });
++
++      const curTw = getInterpolatedPrice(d.name, twPrices, baseTwPrice);
++      const curNasdaq = getInterpolatedPrice(d.name, nasdaqPrices, baseNasdaqPrice);
++      const curSp500 = getInterpolatedPrice(d.name, sp500Prices, baseSp500Price);
++      const curDow = getInterpolatedPrice(d.name, dowPrices, baseDowPrice);
++
++      const marketRoi = ((curTw / baseTwPrice) - 1) * 100;
++      const nasdaqRoi = ((curNasdaq / baseNasdaqPrice) - 1) * 100;
++      const sp500Roi = ((curSp500 / baseSp500Price) - 1) * 100;
++      const dowRoi = ((curDow / baseDowPrice) - 1) * 100;
+ 
+       if (idx > 0) {
+         const valueBeforeCashflow = d.value - cashFlow;
+@@ -849,14 +798,36 @@ export default function App() {
+         prevTotalValue = d.value;
+       }
+ 
++      const adjustedValue = Math.floor(baseValue * (nav / 100));
++
+       return {
+         ...d,
++        cashFlow,
+         portfolioRoi: nav - 100,
++        adjustedValue,
+         marketRoi,
+-        marketPrice: currentMarketPrice
++        marketPrice: curTw,
++        nasdaqRoi,
++        nasdaqPrice: curNasdaq,
++        sp500Roi,
++        sp500Price: curSp500,
++        dowRoi,
++        dowPrice: curDow
+       };
+     });
+-  }, [chartData, weeklyPrices, transactions]);
++  }, [weeklyPrices]);
++
++  const finalTwChartData = useMemo(() => {
++    return generateChartData(twCalculations.appData, twTransactions, false);
++  }, [generateChartData, twCalculations.appData, twTransactions]);
++
++  const finalUsChartData = useMemo(() => {
++    return generateChartData(usCalculations.appData, usTransactions, true);
++  }, [generateChartData, usCalculations.appData, usTransactions]);
++
++  const finalChartData = useMemo(() => {
++    return generateChartData(appData, transactions, false);
++  }, [generateChartData, appData, transactions]);
+ 
+   const handleAddTransaction = () => {
+     if (!formData.ticker || formData.unitPrice < 0 || formData.quantity <= 0) return;
+@@ -968,6 +939,31 @@ export default function App() {
+     }));
+   };
+ 
++  const handleDeleteHolding = (ticker: string) => {
++    const groupTxs = appData.stockGroups[ticker] || [];
++    const currentName = groupTxs.length > 0 ? groupTxs[0].name : ticker;
++    
++    if (window.confirm(`蝣箏?閬?扎?{ticker} | ${currentName}?誑?銝????${groupTxs.length} 蝑漱????嚗n甇斗?雿瘜?瑯)) {
++      setTransactions(prev => prev.filter(tx => tx.ticker !== ticker));
++      setTickerOrder(prev => prev.filter(t => t !== ticker));
++      setTickerMetadata(prev => {
++        const next = { ...prev };
++        delete next[ticker];
++        return next;
++      });
++      if (selectedTicker === ticker) {
++        setSelectedTicker(null);
++      }
++      alert(`??{ticker}?歇???芷?);
++    }
++  };
++
++  const handleDeleteTransaction = (id: string) => {
++    if (window.confirm('蝣箏?閬?日?鈭斗?蝝??嚗?)) {
++      setTransactions(prev => prev.filter(tx => tx.id !== id));
++    }
++  };
++
+   const handleEditTx = (tx: Transaction) => {
+     setEditingTxId(tx.id);
+     setFormData({
+@@ -1005,6 +1001,10 @@ export default function App() {
+       }
+     });
+     const heldTickers = Array.from(tickers) as string[];
++    // 瘞賊???啁??∪之?斗??賂?蝣箔?甇瑕?∪ (weeklyPrices) 鋆??唳????怠???+    ['^TWII', '^IXIC', '^GSPC', '^DJI'].forEach(idx => {
++      if (!heldTickers.includes(idx)) heldTickers.push(idx);
++    });
+ 
+     try {
+       // 1. 憒??冽?圈??潛憓?(localhost)嚗??怠?蝡臬?砍??寞??啣?澆神?交?獢?@@ -1256,6 +1256,7 @@ export default function App() {
+               {[
+                 { id: 'A', label: '鈭斗?/?敦', icon: Plus, desc: 'Groups & Entry' },
+                 { id: 'B', label: '?芸祕?暹???, icon: LayoutDashboard, desc: 'Portfolio' },
++                { id: 'E', label: '蝢撠?', icon: Globe, desc: 'US Portfolio' },
+                 { id: 'C', label: '撌脣祕?暹???, icon: History, desc: 'History ROI' },
+                 { id: 'D', label: '蝟餌絞閮剖?', icon: SettingsIcon, desc: 'Settings' },
+               ].map((nav) => (
+@@ -1791,9 +1792,27 @@ export default function App() {
+ 
+           {activeView === 'B' && (
+             <PortfolioView
+-              stats={stats}
+-              chartData={finalChartData}
+-              appData={appData}
++              isUsSector={false}
++              stats={twCalculations.stats}
++              chartData={finalTwChartData}
++              appData={twCalculations.appData}
++              marketData={marketData}
++              weeklyPrices={weeklyPrices}
++              setSelectedTicker={setSelectedTicker}
++              setActiveView={setActiveView}
++              tickerOrder={tickerOrder}
++              setWeeklyPrices={setWeeklyPrices}
++              tickerMetadata={tickerMetadata}
++              onUpdateAssetClass={handleUpdateTickerAssetClass}
++            />
++          )}
++
++          {activeView === 'E' && (
++            <PortfolioView
++              isUsSector={true}
++              stats={usCalculations.stats}
++              chartData={finalUsChartData}
++              appData={usCalculations.appData}
+               marketData={marketData}
+               weeklyPrices={weeklyPrices}
+               setSelectedTicker={setSelectedTicker}
