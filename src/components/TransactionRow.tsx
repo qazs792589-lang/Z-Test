@@ -18,6 +18,8 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
   onDelete,
   onToggleRealized
 }) => {
+  const isUS = tx.currency === 'USD';
+  
   return (
     <motion.div
       layout
@@ -51,6 +53,9 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
             )}>
               {tx.direction === 'BUY' ? '買入' : tx.direction === 'SELL' ? '賣出' : '配息'}
             </div>
+            {isUS && (
+              <span className="text-[7px] font-black text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded leading-none">US</span>
+            )}
             {isTxRealized(tx) && (
               <span className="text-[8px] font-bold text-[var(--text-dim)] opacity-60 scale-90 whitespace-nowrap">(已實現)</span>
             )}
@@ -90,10 +95,26 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
               </div>
             </div>
             <p className="text-[10px] md:text-xs text-[var(--text-main)] font-mono font-bold truncate leading-none">
-              <span className="text-[var(--text-dim)] mr-1">數量:</span>{tx.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} 股
+              <span className="text-[var(--text-dim)] mr-1">數量:</span>{tx.quantity.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })} 股
               <span className="mx-2 opacity-30">|</span>
-              <span className="text-[var(--text-dim)] mr-1">單價:</span><span className="opacity-50 text-[10px]">$</span>{tx.unitPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              <span className="text-[var(--text-dim)] mr-1">單價:</span>
+              {isUS ? (
+                <span><span className="opacity-50 text-[10px]">$</span>{tx.unitPrice.toFixed(2)} <span className="opacity-40 text-[9px]">USD</span></span>
+              ) : (
+                <span><span className="opacity-50 text-[10px]">$</span>{tx.unitPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              )}
+              {isUS && tx.twdRate && (
+                <span className="text-blue-400 opacity-70 ml-1 text-[9px]">@ {tx.twdRate}</span>
+              )}
             </p>
+            {/* 美股：台幣換算金額 */}
+            {isUS && tx.twdAmount != null && (
+              <p className="text-[9px] font-mono text-blue-400 mt-1 leading-none">
+                <span className="opacity-60 mr-1">台幣約</span>
+                <span className="font-black">NT${tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</span>
+                <span className="opacity-40 ml-1">(不含費用)</span>
+              </p>
+            )}
             {tx.notes && (
               <p className="text-xs md:text-[13px] text-[var(--text-main)] mt-1.5 flex items-center gap-1.5 max-w-[260px] md:max-w-[450px] leading-none" title={tx.notes}>
                 <StickyNote size={12} className="text-[var(--accent)] shrink-0" />
@@ -109,7 +130,26 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
           <p className={cn(
             "text-sm md:text-base font-mono font-black leading-none mt-1",
             tx.direction === 'BUY' ? "text-[var(--danger)]" : tx.direction === 'DIVIDEND' ? "text-orange-400" : "text-[var(--success)]"
-          )}><span className="opacity-40 text-xs mr-0.5">$</span>{Math.abs(tx.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          )}>
+            {isUS ? (
+              <span>
+                <span className="opacity-40 text-xs mr-0.5">$</span>
+                {Math.abs(tx.totalAmount).toFixed(2)}
+                <span className="text-[9px] opacity-40 ml-0.5">USD</span>
+              </span>
+            ) : (
+              <span>
+                <span className="opacity-40 text-xs mr-0.5">$</span>
+                {Math.abs(tx.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+            )}
+          </p>
+          {/* 美股顯示台幣換算 */}
+          {isUS && tx.twdAmount != null && (
+            <p className="text-[9px] font-mono text-blue-400 mt-0.5 leading-none">
+              <span className="opacity-50">≈ NT$</span>{tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}
+            </p>
+          )}
         </div>
       </motion.div>
     </motion.div>

@@ -882,6 +882,9 @@ export default function App() {
       tax: preview.tax,
       totalAmount: preview.total,
       notes: formData.notes,
+      currency: formData.currency,
+      twdRate: formData.currency === 'USD' ? formData.twdRate : undefined,
+      twdAmount: formData.currency === 'USD' ? parseFloat((formData.unitPrice * formData.quantity * formData.twdRate).toFixed(2)) : undefined,
       // Preserve realized status if editing
       isManualRealized: editingTxId ? transactions.find(t => t.id === editingTxId)?.isManualRealized : undefined
     };
@@ -998,6 +1001,8 @@ export default function App() {
       customTax: tx.tax,
       manualFee: tx.fee,
       manualTax: tx.direction === 'SELL' ? tx.tax : '',
+      currency: tx.currency || 'TWD',
+      twdRate: tx.twdRate || 31.5,
       notes: tx.notes || ''
     });
     setActiveView('A');
@@ -1416,8 +1421,29 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div className="col-span-2 md:col-span-1">
+                  {/* 台股 / 美股切換 */}
+                  <div className="flex items-center gap-3">
+                    <label className="elegant-label mb-0">市場</label>
+                    <div className="flex bg-[var(--bg-primary)] p-1 border border-[var(--border)] rounded h-[38px] items-stretch gap-0.5">
+                      {(['TWD', 'USD'] as const).map(cur => (
+                        <button
+                          key={cur}
+                          onClick={() => setFormData({ ...formData, currency: cur, quantity: cur === 'USD' ? 1 : 1000 })}
+                          className={cn(
+                            "px-4 flex items-center justify-center text-[11px] font-black rounded transition-all",
+                            formData.currency === cur
+                              ? (cur === 'TWD' ? "bg-[var(--accent)] text-[var(--bg-primary)]" : "bg-blue-500 text-white")
+                              : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
+                          )}
+                        >
+                          {cur === 'TWD' ? '🇹🇼 台股' : '🇺🇸 美股'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className={cn("grid gap-3", formData.currency === 'USD' ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-3")}>
+                    <div className={cn(formData.currency === 'USD' ? "col-span-2 md:col-span-1" : "col-span-2 md:col-span-1")}>
                       <label className="elegant-label">交易方向</label>
                       <div className="flex bg-[var(--bg-primary)] p-1 border border-[var(--border)] rounded h-[46px] items-stretch">
                         {(['BUY', 'SELL', 'DIVIDEND'] as TransactionDirection[]).map(dir => (
@@ -1437,24 +1463,47 @@ export default function App() {
                       </div>
                     </div>
                     <div>
-                      <label className="elegant-label">{formData.direction === 'DIVIDEND' ? '每股股息' : '單價'}</label>
+                      <label className="elegant-label">
+                        {formData.direction === 'DIVIDEND' ? '每股股息' : `單價 ${formData.currency === 'USD' ? '(USD)' : ''}`}
+                      </label>
                       <input
                         type="number"
                         className="elegant-input h-[46px]"
+                        step={formData.currency === 'USD' ? '0.01' : '1'}
                         value={formData.unitPrice || ''}
                         onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
                       />
                     </div>
                     <div>
-                      <label className="elegant-label">股數</label>
+                      <label className="elegant-label">股數 {formData.currency === 'USD' ? '(股)' : '(張/股)'}</label>
                       <input
                         type="number"
                         className="elegant-input h-[46px]"
+                        step={formData.currency === 'USD' ? '0.01' : '1'}
                         value={formData.quantity || ''}
                         onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
                       />
                     </div>
+                    {formData.currency === 'USD' && (
+                      <div>
+                        <label className="elegant-label">台幣匯率 (USD/TWD)</label>
+                        <input
+                          type="number"
+                          className="elegant-input h-[46px]"
+                          step="0.01"
+                          value={formData.twdRate || ''}
+                          onChange={(e) => setFormData({ ...formData, twdRate: Number(e.target.value) })}
+                        />
+                      </div>
+                    )}
                   </div>
+                  {formData.currency === 'USD' && formData.unitPrice > 0 && formData.quantity > 0 && formData.twdRate > 0 && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 font-mono">
+                      <span className="font-black">≈ 台幣</span>
+                      <span className="text-sm font-black">NT${(formData.unitPrice * formData.quantity * formData.twdRate).toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</span>
+                      <span className="opacity-50 ml-1">({formData.unitPrice.toFixed(2)} × {formData.quantity} × {formData.twdRate})</span>
+                    </div>
+                  )}
 
                   <div className="bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-xl p-6 relative overflow-hidden">
                     <div className="relative z-10">
@@ -1597,6 +1646,13 @@ export default function App() {
                         ? ((curPrice / h.avgCost) - 1) * 100
                         : (h.totalInvested === 0 && h.realizedPL !== 0 ? 100 : 0);
                       const displayName = txs.length > 0 ? txs[0].name : h.name;
+                      
+                      // 判斷是否為美股（取該 ticker 交易中有 USD currency 的）
+                      const isUS = (txs as Transaction[]).some(t => t.currency === 'USD');
+                      // 取最新交易的台幣匯率（用於換算市值）
+                      const latestTwdRate = isUS
+                        ? [...(txs as Transaction[])].filter(t => t.currency === 'USD' && t.twdRate).sort((a, b) => b.date.localeCompare(a.date))[0]?.twdRate
+                        : undefined;
 
                       return (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1620,13 +1676,25 @@ export default function App() {
                                       >
                                         {ticker}
                                       </span>
+                                      {isUS && (
+                                        <span className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded text-[9px] font-black tracking-widest leading-none">🇺🇸 USD</span>
+                                      )}
                                     </div>
                                   </div>
 
                                   <div className="text-right flex-shrink-0 mt-2 md:mt-0">
-                                    <p className="text-2xl md:text-4xl lg:text-5xl font-mono font-black text-[var(--accent)] tracking-tighter leading-none mb-1 md:mb-2">${(h.currentShares * curPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                    <p className="text-2xl md:text-4xl lg:text-5xl font-mono font-black text-[var(--accent)] tracking-tighter leading-none mb-1 md:mb-2">
+                                      ${(h.currentShares * curPrice).toLocaleString(undefined, { maximumFractionDigits: isUS ? 2 : 0 })}
+                                      {isUS && <span className="text-sm md:text-lg opacity-50 ml-1">USD</span>}
+                                    </p>
+                                    {isUS && latestTwdRate && (
+                                      <p className="text-[9px] md:text-xs font-mono text-blue-400 mb-1">
+                                        ≈ NT${(h.currentShares * curPrice * latestTwdRate).toLocaleString('zh-TW', { maximumFractionDigits: 0 })}
+                                        <span className="opacity-40 ml-1">(≈@{latestTwdRate})</span>
+                                      </p>
+                                    )}
                                     <p className={cn("text-[10px] md:text-xs font-bold font-mono", unrealizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                                      {unrealizedPL >= 0 ? '▲' : '▼'} ${(Math.abs(unrealizedPL)).toLocaleString(undefined, { maximumFractionDigits: 0 })} ({roi.toFixed(2)}%)
+                                      {unrealizedPL >= 0 ? '▲' : '▼'} ${(Math.abs(unrealizedPL)).toLocaleString(undefined, { maximumFractionDigits: isUS ? 2 : 0 })} ({roi.toFixed(2)}%)
                                     </p>
                                   </div>
                                 </div>
@@ -1634,19 +1702,22 @@ export default function App() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-8 border-t border-[var(--border)]">
                                   <div>
                                     <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">持有股數</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{h.currentShares.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{h.currentShares.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })}</p>
                                   </div>
                                   <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價</span>
+                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS ? ' (USD)' : ''}</span>
                                     <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                                   </div>
                                   <div>
-                                    <span className="text-[10px] text(--var-text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">平均成本</span>
+                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">平均成本{isUS ? ' (USD)' : ''}</span>
                                     <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${h.avgCost.toFixed(2)}</p>
                                   </div>
                                   <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">總投入本金</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${h.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">總投入本金{isUS ? ' (USD)' : ''}</span>
+                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${h.totalInvested.toLocaleString(undefined, { maximumFractionDigits: isUS ? 2 : 0 })}</p>
+                                    {isUS && latestTwdRate && (
+                                      <p className="text-[9px] text-blue-400 mt-1">≈ NT${(h.totalInvested * latestTwdRate).toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</p>
+                                    )}
                                   </div>
                                 </div>
                               </div>

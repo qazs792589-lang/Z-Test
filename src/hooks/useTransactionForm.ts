@@ -12,8 +12,11 @@ export const useTransactionForm = (configs: Record<TransactionCategory, Config>)
     category: 'General' as TransactionCategory,
     customFee: 0,
     customTax: 0,
-    manualFee: '' as string | number, // Added for manual override
-    manualTax: '' as string | number // Added for manual override
+    manualFee: '' as string | number,
+    manualTax: '' as string | number,
+    currency: 'TWD' as 'TWD' | 'USD', // 台股或美股
+    twdRate: 31.5, // 美股對台幣匯率
+    notes: '' as string
   });
 
   const preview = useMemo(() => {

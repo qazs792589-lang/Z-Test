@@ -16,6 +16,9 @@ export interface Transaction {
   notes?: string;
   isManualRealized?: boolean;
   isUncleared?: boolean;
+  currency?: 'TWD' | 'USD'; // 交易貨幣（預設 TWD）
+  twdRate?: number; // 交易時台幣匯率（例如 31.5）
+  twdAmount?: number; // 實際台幣總額（unitPrice * quantity * twdRate）
 }
 
 export interface Config {
