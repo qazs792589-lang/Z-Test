@@ -77,6 +77,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       realizedCount: number;
       isHolding: boolean;
       lastOpDate: string;
+      totalPLTwd: number;
+      totalCostTwd: number;
+      totalRoi: number;
     }> = {};
 
     Object.entries(appData.stockGroups).forEach(([ticker, txs]: [string, any]) => {
@@ -106,6 +109,27 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
 
       const lastOpDate = txs.reduce((latest: string, tx: any) => tx.date > latest ? tx.date : latest, '0000-00-00');
 
+      const h = appData.holdingsMap?.[ticker];
+      const curPrice = marketPrices[ticker] || h?.avgCost || 0;
+      const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
+      
+      let unrealizedPLTwd = 0;
+      let unrealizedCostTwd = 0;
+      
+      if (h && currentShares > 0) {
+        const originalValue = curPrice * h.currentShares;
+        const twdValue = isUS ? (originalValue * 31) : originalValue;
+        const twdInvested = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
+        const twdUnrealizedDiv = isUS ? (h.unrealizedDividendsTwd || (h.unrealizedDividends * 31)) : h.unrealizedDividends;
+        
+        unrealizedPLTwd = twdValue - twdInvested + (twdUnrealizedDiv || 0);
+        unrealizedCostTwd = twdInvested;
+      }
+      
+      const totalPLTwd = totalProfit + unrealizedPLTwd;
+      const totalCostTwd = totalRealizedCost + unrealizedCostTwd;
+      const totalRoi = totalCostTwd > 0 ? (totalPLTwd / totalCostTwd) * 100 : 0;
+
       groups[ticker] = {
         name: txs[0]?.name || ticker,
         transactions: displayRows,
@@ -115,7 +139,10 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
         cumulativeShares: totalRealizedShares,
         realizedCount: realizedItems.length,
         isHolding: currentShares > 0,
-        lastOpDate
+        lastOpDate,
+        totalPLTwd,
+        totalCostTwd,
+        totalRoi
       };
     });
 
@@ -349,19 +376,22 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                     <div className="text-right">
                       {(() => {
                         const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
+                        const displayVal = group.totalPLTwd;
+                        const displayRoi = group.totalRoi;
                         return (
                           <div className="flex flex-col items-end">
-                            <span className={cn("text-lg md:text-xl font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                              {group.cumulativeProfit >= 0 ? '+' : ''}
-                              {isUS 
-                                ? `NT$${Math.round(group.cumulativeProfit).toLocaleString('zh-TW')}`
-                                : `$${(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-1 opacity-50">
+                              {group.isHolding ? '全期總收益' : '已實現收益'}
                             </span>
-                            {group.cumulativeCost > 0 && (
-                              <div className={cn("text-[10px] font-bold flex items-center gap-1", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                                {group.cumulativeProfit >= 0 ? '▲' : '▼'} {group.cumulativeCost > 0 ? ((group.cumulativeProfit / group.cumulativeCost) * 100).toFixed(2) : '0.00'}%
-                              </div>
-                            )}
+                            <span className={cn("text-lg md:text-xl font-mono font-black", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {displayVal >= 0 ? '+' : ''}
+                              {isUS 
+                                ? `NT$${Math.round(displayVal).toLocaleString('zh-TW')}`
+                                : `$${Math.round(displayVal || 0).toLocaleString()}`}
+                            </span>
+                            <div className={cn("text-[10px] font-bold flex items-center gap-1 mt-0.5", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {displayVal >= 0 ? '▲' : '▼'} {displayRoi.toFixed(2)}%
+                            </div>
                           </div>
                         );
                       })()}
@@ -412,6 +442,11 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                                 ? `NT$${Math.round(group.cumulativeProfit).toLocaleString('zh-TW')}`
                                 : `$${(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                             </span>
+                            {group.cumulativeCost > 0 && (
+                              <span className={cn("text-[9px] font-bold block mt-0.5", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                                {group.cumulativeProfit >= 0 ? '▲' : '▼'} {((group.cumulativeProfit / group.cumulativeCost) * 100).toFixed(2)}%
+                              </span>
+                            )}
                           </div>
                         </>
                       );
