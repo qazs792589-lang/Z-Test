@@ -440,11 +440,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           const twdCost = (h as any).totalInvestedTwd || 0;
                           const twdValue = curPrice * h.currentShares * 31;
                           const twdHpl = twdValue - twdCost;
-                          const twdHroi = twdCost > 0 ? (twdHpl / twdCost) * 100 : 0;
 
-                          const displayPriceStr = isTwd 
-                            ? `$${curPrice.toFixed(2)} (NT$${Math.round(curPrice * 31).toLocaleString()})`
-                            : `$${curPrice.toFixed(2)}`;
+                          const displayPriceStr = `$${curPrice.toFixed(2)}`;
                           
                           const displayValueStr = isTwd
                             ? `NT$${Math.round(twdValue).toLocaleString('zh-TW')}`
@@ -455,16 +452,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                             : `$${h.avgCost.toFixed(2)}`;
 
                           const currentHpl = isTwd ? twdHpl : hpl;
-                          const currentHroi = isTwd ? twdHroi : hroi;
+                          // 報酬率百分比一律用美元本位 (hroi) 以防匯差扭曲報酬率
+                          const currentHroi = hroi;
 
                           return (
                             <div className="grid grid-cols-2 gap-y-6 gap-x-4 pt-6 border-t border-[var(--border)]/50">
-                              <div 
-                                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
-                                className={cn("flex flex-col select-none", isUsSector && "cursor-pointer hover:opacity-80")}
-                              >
+                              <div className="flex flex-col select-none">
                                 <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
-                                  最新收盤價 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                  最新收盤價
                                 </span>
                                 <span className="text-lg font-mono font-black text-[var(--text-main)]">{displayPriceStr}</span>
                               </div>
