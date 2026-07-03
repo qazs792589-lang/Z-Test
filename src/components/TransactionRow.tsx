@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Edit2, Check, Trash2, StickyNote } from 'lucide-react';
 import { Transaction } from '../types';
 import { cn } from '../lib/utils';
@@ -44,6 +44,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
         )}
         style={{ touchAction: 'pan-y' }}
       >
+        {/* 左側：方向標籤 + 日期/數量/單價 */}
         <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
           <div className="flex flex-col items-center gap-1 shrink-0">
             <div className={cn(
@@ -95,7 +96,8 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
               </div>
             </div>
             <p className="text-[10px] md:text-xs text-[var(--text-main)] font-mono font-bold truncate leading-none">
-              <span className="text-[var(--text-dim)] mr-1">數量:</span>{tx.quantity.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })} 股
+              <span className="text-[var(--text-dim)] mr-1">數量:</span>
+              {tx.quantity.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })} 股
               <span className="mx-2 opacity-30">|</span>
               <span className="text-[var(--text-dim)] mr-1">單價:</span>
               {isUS ? (
@@ -103,18 +105,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
               ) : (
                 <span><span className="opacity-50 text-[10px]">$</span>{tx.unitPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
               )}
-              {isUS && tx.twdRate && (
-                <span className="text-blue-400 opacity-70 ml-1 text-[9px]">@ {tx.twdRate}</span>
-              )}
             </p>
-            {/* 美股：台幣換算金額 */}
-            {isUS && tx.twdAmount != null && (
-              <p className="text-[9px] font-mono text-blue-400 mt-1 leading-none">
-                <span className="opacity-60 mr-1">台幣約</span>
-                <span className="font-black">NT${tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</span>
-                <span className="opacity-40 ml-1">(不含費用)</span>
-              </p>
-            )}
             {tx.notes && (
               <p className="text-xs md:text-[13px] text-[var(--text-main)] mt-1.5 flex items-center gap-1.5 max-w-[260px] md:max-w-[450px] leading-none" title={tx.notes}>
                 <StickyNote size={12} className="text-[var(--accent)] shrink-0" />
@@ -123,12 +114,16 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
             )}
           </div>
         </div>
-        <div className="text-right shrink-0 flex flex-col justify-center ml-2">
-          <p className="text-[8px] text-[var(--text-dim)] uppercase tracking-widest font-black opacity-60 mb-0.5 leading-none">
-            交易總額
+
+        {/* 右側：交易總額（放大 + 台幣結算） */}
+        <div className="text-right shrink-0 flex flex-col justify-center ml-2 min-w-[80px]">
+          <p className="text-[8px] text-[var(--text-dim)] uppercase tracking-widest font-black opacity-60 mb-1 leading-none">
+            {isUS ? '交易金額' : '交易總額'}
           </p>
+          {/* USD 金額 */}
           <p className={cn(
-            "text-sm md:text-base font-mono font-black leading-none mt-1",
+            "font-mono font-black leading-none",
+            isUS ? "text-base md:text-lg" : "text-base md:text-lg",
             tx.direction === 'BUY' ? "text-[var(--danger)]" : tx.direction === 'DIVIDEND' ? "text-orange-400" : "text-[var(--success)]"
           )}>
             {isUS ? (
@@ -144,10 +139,10 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
               </span>
             )}
           </p>
-          {/* 美股顯示台幣換算 */}
+          {/* 美股台幣結算金額（突出顯示） */}
           {isUS && tx.twdAmount != null && (
-            <p className="text-[9px] font-mono text-blue-400 mt-0.5 leading-none">
-              <span className="opacity-50">≈ NT$</span>{tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}
+            <p className="text-sm md:text-base font-mono font-black text-blue-300 mt-1 leading-none">
+              = NT${tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}
             </p>
           )}
         </div>

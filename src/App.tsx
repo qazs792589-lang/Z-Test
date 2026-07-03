@@ -142,6 +142,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : {};
   });
   const [isEditingTickers, setIsEditingTickers] = useState(false);
+  const [portfolioDisplayCurrency, setPortfolioDisplayCurrency] = useState<'USD' | 'TWD'>('USD');
   const [appPassword, setAppPassword] = useState(() => localStorage.getItem('z_money_pass') || '');
   const [isLocked, setIsLocked] = useState(!!appPassword);
   const [isSettingPass, setIsSettingPass] = useState(false);
@@ -1692,26 +1693,70 @@ export default function App() {
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-8 border-t border-[var(--border)]">
-                                  <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">持有股數</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{h.currentShares.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS ? ' (USD)' : ''}</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">平均成本{isUS ? ' (USD)' : ''}</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${h.avgCost.toFixed(2)}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">總投入本金{isUS ? ' (USD)' : ''}</span>
-                                    <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${h.totalInvested.toLocaleString(undefined, { maximumFractionDigits: isUS ? 2 : 0 })}</p>
-                                    {isUS && latestTwdRate && (
-                                      <p className="text-[9px] text-blue-400 mt-1">≈ NT${(h.totalInvested * latestTwdRate).toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</p>
-                                    )}
-                                  </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-6 border-t border-[var(--border)]">
+                                  {/* USD/TWD 幣別切換（僅美股顯示） */}
+                                  {isUS && (
+                                    <div className="col-span-2 md:col-span-4 flex items-center justify-end mb-2">
+                                      <div className="flex bg-[var(--bg-primary)] p-0.5 border border-[var(--border)] rounded h-[26px] items-stretch gap-0.5">
+                                        {(['USD', 'TWD'] as const).map(cur => (
+                                          <button
+                                            key={cur}
+                                            onClick={() => setPortfolioDisplayCurrency(cur)}
+                                            className={cn(
+                                              "px-3 flex items-center justify-center text-[9px] font-black rounded transition-all",
+                                              portfolioDisplayCurrency === cur
+                                                ? (cur === 'USD' ? "bg-blue-500 text-white" : "bg-[var(--accent)] text-[var(--bg-primary)]")
+                                                : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
+                                            )}
+                                          >
+                                            {cur}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* 計算台幣投入本金（從各筆 twdAmount 加總） */}
+                                  {(() => {
+                                    const twdBought = (txs as Transaction[]).filter(t => t.currency === 'USD' && t.twdAmount && t.direction === 'BUY').reduce((s, t) => s + (t.twdAmount || 0), 0);
+                                    const twdSold = (txs as Transaction[]).filter(t => t.currency === 'USD' && t.twdAmount && t.direction === 'SELL').reduce((s, t) => s + (t.twdAmount || 0), 0);
+                                    const twdInvested = twdBought - twdSold;
+                                    const totalUsdBought = (txs as Transaction[]).filter(t => t.currency === 'USD' && t.direction === 'BUY').reduce((s, t) => s + t.quantity, 0);
+                                    const avgTwdCost = totalUsdBought > 0 ? twdBought / totalUsdBought : 0;
+                                    const showTWD = isUS && portfolioDisplayCurrency === 'TWD';
+                                    return (
+                                      <>
+                                        <div>
+                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">持有股數</span>
+                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{h.currentShares.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS && !showTWD ? ' (USD)' : ''}</span>
+                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{showTWD ? '—' : `$${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}</p>
+                                          {showTWD && <p className="text-[9px] text-[var(--text-dim)] mt-1 opacity-60">無即時匯率</p>}
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">
+                                            平均成本{showTWD ? ' (NT$)' : isUS ? ' (USD)' : ''}
+                                          </span>
+                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">
+                                            {showTWD
+                                              ? `NT$${Math.round(avgTwdCost).toLocaleString('zh-TW')}`
+                                              : `$${h.avgCost.toFixed(2)}`}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">
+                                            總投入本金{showTWD ? ' (NT$)' : isUS ? ' (USD)' : ''}
+                                          </span>
+                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">
+                                            {showTWD
+                                              ? `NT$${Math.round(twdInvested).toLocaleString('zh-TW')}`
+                                              : `$${h.totalInvested.toLocaleString(undefined, { maximumFractionDigits: isUS ? 2 : 0 })}`}
+                                          </p>
+                                        </div>
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               </div>
 
