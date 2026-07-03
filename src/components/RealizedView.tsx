@@ -128,9 +128,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
 
   const globalRealized = useMemo(() => {
     const list = appData?.realizedList || [];
-    const profit = list.reduce((sum: number, r: any) => sum + r.profit, 0);
-    const cost = list.reduce((sum: number, r: any) => sum + r.totalCost, 0);
-    const revenue = list.reduce((sum: number, r: any) => sum + r.totalRevenue, 0);
+    const profit = list.reduce((sum: number, r: any) => sum + (r.profitTwd !== undefined ? r.profitTwd : r.profit), 0);
+    const cost = list.reduce((sum: number, r: any) => sum + (r.totalCostTwd !== undefined ? r.totalCostTwd : r.totalCost), 0);
+    const revenue = list.reduce((sum: number, r: any) => sum + (r.totalRevenueTwd !== undefined ? r.totalRevenueTwd : r.totalRevenue), 0);
     const roi = cost > 0 ? (profit / cost) * 100 : 0;
     return { profit, cost, revenue, roi, count: list.length };
   }, [appData?.realizedList]);
@@ -273,7 +273,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總成本</span>
               </div>
               <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
-                ${globalRealized.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                NT${Math.round(globalRealized.cost || 0).toLocaleString('zh-TW')}
               </p>
             </div>
 
@@ -286,7 +286,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總收入</span>
               </div>
               <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
-                ${globalRealized.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                NT${Math.round(globalRealized.revenue || 0).toLocaleString('zh-TW')}
               </p>
             </div>
 
@@ -313,7 +313,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
               </div>
               <div className="flex items-baseline gap-2">
                 <p className={cn("text-xl md:text-3xl font-mono font-black tracking-tight", globalRealized.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                  {globalRealized.profit >= 0 ? '+' : ''}{globalRealized.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {globalRealized.profit >= 0 ? '+' : ''}NT${Math.round(globalRealized.profit).toLocaleString('zh-TW')}
                 </p>
                 <span className={cn("text-[10px] md:text-xs font-black font-mono px-2 py-0.5 rounded-full", globalRealized.roi >= 0 ? "text-[var(--success)] bg-[var(--success)]/10" : "text-[var(--danger)] bg-[var(--danger)]/10")}>
                   {globalRealized.roi >= 0 ? '▲' : '▼'}{Math.abs(globalRealized.roi).toFixed(1)}%
