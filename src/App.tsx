@@ -1694,27 +1694,6 @@ export default function App() {
                                 </div>
 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-6 border-t border-[var(--border)]">
-                                  {/* USD/TWD 幣別切換（僅美股顯示） */}
-                                  {isUS && (
-                                    <div className="col-span-2 md:col-span-4 flex items-center justify-end mb-2">
-                                      <div className="flex bg-[var(--bg-primary)] p-0.5 border border-[var(--border)] rounded h-[26px] items-stretch gap-0.5">
-                                        {(['USD', 'TWD'] as const).map(cur => (
-                                          <button
-                                            key={cur}
-                                            onClick={() => setPortfolioDisplayCurrency(cur)}
-                                            className={cn(
-                                              "px-3 flex items-center justify-center text-[9px] font-black rounded transition-all",
-                                              portfolioDisplayCurrency === cur
-                                                ? (cur === 'USD' ? "bg-blue-500 text-white" : "bg-[var(--accent)] text-[var(--bg-primary)]")
-                                                : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
-                                            )}
-                                          >
-                                            {cur}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
                                   {/* 計算台幣投入本金（從各筆 twdAmount 加總） */}
                                   {(() => {
                                     const twdBought = (txs as Transaction[]).filter(t => t.currency === 'USD' && t.twdAmount && t.direction === 'BUY').reduce((s, t) => s + (t.twdAmount || 0), 0);
@@ -1732,12 +1711,20 @@ export default function App() {
                                         <div>
                                           <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS && !showTWD ? ' (USD)' : ''}</span>
                                           <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{showTWD ? '—' : `$${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}</p>
-                                          {showTWD && <p className="text-[9px] text-[var(--text-dim)] mt-1 opacity-60">無即時匯率</p>}
+                                          {showTWD && <p className="text-[9px] text-[var(--text-dim)] mt-1 opacity-50">無即時匯率</p>}
                                         </div>
                                         <div>
-                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">
-                                            平均成本{showTWD ? ' (NT$)' : isUS ? ' (USD)' : ''}
-                                          </span>
+                                          {/* 點擊切換幣別 */}
+                                          <button
+                                            onClick={() => isUS && setPortfolioDisplayCurrency(showTWD ? 'USD' : 'TWD')}
+                                            className={cn("text-left block mb-2 transition-colors", isUS ? "cursor-pointer hover:opacity-100 opacity-70" : "cursor-default opacity-60")}
+                                            title={isUS ? (showTWD ? '切換為 USD' : '切換為 NT$') : undefined}
+                                          >
+                                            <span className="text-[10px] uppercase tracking-[0.2em] font-black block leading-none">
+                                              平均成本
+                                              {isUS && <span className={cn("ml-1 text-[8px] px-1 py-0.5 rounded font-black", showTWD ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "bg-blue-500/20 text-blue-400")}>{showTWD ? 'NT$' : 'USD'} ⇄</span>}
+                                            </span>
+                                          </button>
                                           <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">
                                             {showTWD
                                               ? `NT$${Math.round(avgTwdCost).toLocaleString('zh-TW')}`
@@ -1745,9 +1732,17 @@ export default function App() {
                                           </p>
                                         </div>
                                         <div>
-                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">
-                                            總投入本金{showTWD ? ' (NT$)' : isUS ? ' (USD)' : ''}
-                                          </span>
+                                          {/* 點擊切換幣別（主要觸發點） */}
+                                          <button
+                                            onClick={() => isUS && setPortfolioDisplayCurrency(showTWD ? 'USD' : 'TWD')}
+                                            className={cn("text-left block mb-2 transition-colors", isUS ? "cursor-pointer hover:opacity-100 opacity-70" : "cursor-default opacity-60")}
+                                            title={isUS ? (showTWD ? '切換為 USD' : '切換為 NT$') : undefined}
+                                          >
+                                            <span className="text-[10px] uppercase tracking-[0.2em] font-black block leading-none">
+                                              總投入本金
+                                              {isUS && <span className={cn("ml-1 text-[8px] px-1 py-0.5 rounded font-black", showTWD ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "bg-blue-500/20 text-blue-400")}>{showTWD ? 'NT$' : 'USD'} ⇄</span>}
+                                            </span>
+                                          </button>
                                           <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">
                                             {showTWD
                                               ? `NT$${Math.round(twdInvested).toLocaleString('zh-TW')}`
