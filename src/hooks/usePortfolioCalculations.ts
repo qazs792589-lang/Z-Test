@@ -11,6 +11,12 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
       _mathShares: number;
       _mathCost: number;
       _mathFees: number;
+      // 額外台幣欄位
+      totalInvestedTwd: number;
+      realizedPLTwd: number;
+      unrealizedDividendsTwd: number;
+      avgCostTwd: number;
+      _mathCostTwd: number;
     }> = {};
     const realizedList: RealizedProfit[] = [];
     const stockGroups: Record<string, Transaction[]> = {};
@@ -24,25 +30,41 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
       stockGroups[tx.ticker].push(tx);
 
       const isRealized = isTxRealized(tx);
+      const isUS = tx.currency === 'USD';
 
       if (!holdings[tx.ticker]) {
         holdings[tx.ticker] = {
           ticker: tx.ticker, name: tx.name,
           currentShares: 0, avgCost: 0, totalInvested: 0, realizedPL: 0, totalBuyFees: 0,
           unrealizedDividends: 0,
-          _mathShares: 0, _mathCost: 0, _mathFees: 0 // Shadow math tracking
+          _mathShares: 0, _mathCost: 0, _mathFees: 0, // Shadow math tracking
+          totalInvestedTwd: 0,
+          realizedPLTwd: 0,
+          unrealizedDividendsTwd: 0,
+          avgCostTwd: 0,
+          _mathCostTwd: 0
         };
       }
 
       const h = holdings[tx.ticker];
+      
+      // 計算台幣實際投入金額（若有 twdAmount 則使用，否則乘以 31）
+      const twdBuyAmount = isUS
+        ? (tx.twdAmount || (Math.abs(tx.totalAmount) * 31))
+        : Math.abs(tx.totalAmount);
 
       if (tx.direction === 'BUY') {
         // Update Shadow Math (Always tracks everything to maintain a correct cost basis)
         const newMathShares = h._mathShares + tx.quantity;
         const newMathCost = h._mathCost + Math.abs(tx.totalAmount);
+        const newMathCostTwd = h._mathCostTwd + twdBuyAmount;
+
         h.avgCost = newMathShares > 0 ? newMathCost / newMathShares : 0;
+        h.avgCostTwd = newMathShares > 0 ? newMathCostTwd / newMathShares : 0;
+
         h._mathShares = newMathShares;
         h._mathCost = newMathCost;
+        h._mathCostTwd = newMathCostTwd;
         h._mathFees += tx.fee + tx.tax;
 
         // Update Active Holding (Only if NOT manually marked realized)
@@ -50,6 +72,7 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
           if (h.currentShares === 0) h.firstBuyDate = tx.date;
           h.currentShares += tx.quantity;
           h.totalInvested += Math.abs(tx.totalAmount);
+          h.totalInvestedTwd += twdBuyAmount;
           h.totalBuyFees += tx.fee + tx.tax;
         }
       } else if (tx.direction === 'SELL') {
@@ -58,11 +81,19 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
         if (sellQty <= 0) return;
 
         const costBasis = h.avgCost * sellQty;
+        const costBasisTwd = h.avgCostTwd * sellQty;
+
         const sellRevenue = Math.abs(tx.totalAmount);
+        const sellRevenueTwd = isUS
+          ? (tx.twdAmount || (sellRevenue * 31))
+          : sellRevenue;
+
         const profit = sellRevenue - costBasis;
+        const profitTwd = sellRevenueTwd - costBasisTwd;
 
         if (isRealized) {
           h.realizedPL += profit;
+          h.realizedPLTwd += profitTwd;
 
           let daysHeld = 0;
           if (h.firstBuyDate) {
@@ -75,45 +106,57 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
             ticker: tx.ticker, name: tx.name, shares: sellQty, buyPrice: h.avgCost, sellPrice: sellRevenue / sellQty,
             totalCost: costBasis, totalRevenue: sellRevenue, totalFees: (h._mathFees / h._mathShares) * sellQty + tx.fee + tx.tax,
             profit: profit, roi: costBasis > 0 ? (profit / costBasis) * 100 : 0, daysHeld: daysHeld,
-            closeDate: tx.date, notes: tx.notes, sellTxId: tx.id
-          });
+            closeDate: tx.date, notes: tx.notes, sellTxId: tx.id,
+            // 附帶台幣盈虧以利後續累加
+            profitTwd: profitTwd
+          } as any);
         }
 
         // Reduce both pools
         h._mathShares -= sellQty;
         h._mathCost -= costBasis;
+        h._mathCostTwd -= costBasisTwd;
         h._mathFees -= h._mathShares > 0 ? (h._mathFees / (h._mathShares + sellQty)) * sellQty : h._mathFees;
 
         const activeSellQty = Math.min(tx.quantity, h.currentShares);
         if (activeSellQty > 0) {
           const activeCostBasis = h.avgCost * activeSellQty;
+          const activeCostBasisTwd = h.avgCostTwd * activeSellQty;
+          
           h.currentShares -= activeSellQty;
           h.totalInvested -= activeCostBasis;
+          h.totalInvestedTwd -= activeCostBasisTwd;
           h.totalBuyFees -= h.currentShares > 0 ? (h.totalBuyFees / (h.currentShares + activeSellQty)) * activeSellQty : h.totalBuyFees;
         }
 
         if (h._mathShares <= 0) {
-          h._mathShares = 0; h._mathCost = 0; h._mathFees = 0;
+          h._mathShares = 0; h._mathCost = 0; h._mathFees = 0; h._mathCostTwd = 0;
         }
         if (h.currentShares <= 0) {
-          h.currentShares = 0; h.totalInvested = 0; h.totalBuyFees = 0; h.firstBuyDate = undefined;
+          h.currentShares = 0; h.totalInvested = 0; h.totalBuyFees = 0; h.firstBuyDate = undefined; h.totalInvestedTwd = 0;
         }
       } else if (tx.direction === 'DIVIDEND') {
         const dividendAmount = Math.abs(tx.totalAmount);
+        const dividendAmountTwd = isUS
+          ? (tx.twdAmount || (dividendAmount * 31))
+          : dividendAmount;
+
         if (isRealized) {
           h.realizedPL += dividendAmount;
+          h.realizedPLTwd += dividendAmountTwd;
           realizedList.push({
             ticker: tx.ticker, name: tx.name, shares: 0, buyPrice: 0, sellPrice: 0, totalCost: 0, totalRevenue: dividendAmount,
-            totalFees: 0, profit: dividendAmount, roi: 0, daysHeld: 0, closeDate: tx.date, notes: tx.notes || '股息收入', sellTxId: tx.id
-          });
+            totalFees: 0, profit: dividendAmount, roi: 0, daysHeld: 0, closeDate: tx.date, notes: tx.notes || '股息收入', sellTxId: tx.id,
+            profitTwd: dividendAmountTwd
+          } as any);
         } else {
-          if (!(h as any).unrealizedDividends) (h as any).unrealizedDividends = 0;
-          (h as any).unrealizedDividends += dividendAmount;
+          h.unrealizedDividends += dividendAmount;
+          h.unrealizedDividendsTwd += dividendAmountTwd;
         }
       }
     });
 
-    const activeHoldings = Object.values(holdings).filter(h => h.currentShares > 0 || (h as any).unrealizedDividends > 0);
+    const activeHoldings = Object.values(holdings).filter(h => h.currentShares > 0 || h.unrealizedDividends > 0);
 
     return { activeHoldings, realizedList, stockGroups, holdingsMap: holdings };
   }, [transactions]);
@@ -123,15 +166,32 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
     let totalInvested = 0;
     const totalRealizedPL = appData.realizedList.reduce((sum, r) => sum + r.profit, 0);
 
+    let totalMarketValueTwd = 0;
+    let totalInvestedTwd = 0;
+    const totalRealizedPLTwd = appData.realizedList.reduce((sum, r) => sum + ((r as any).profitTwd ?? r.profit), 0);
+
     appData.activeHoldings.forEach(h => {
       const latestWeekly = weeklyPrices
         .filter(wp => wp.ticker === h.ticker)
         .sort((a, b) => b.date.localeCompare(a.date))[0]?.price;
 
       const price = marketData.prices[h.ticker] || latestWeekly || h.avgCost;
-      totalMarketValue += price * h.currentShares;
+      const originalValue = price * h.currentShares;
+      
+      // USD / 原幣
+      totalMarketValue += originalValue;
       totalInvested += h.totalInvested;
-      totalMarketValue += (h as any).unrealizedDividends || 0;
+      totalMarketValue += h.unrealizedDividends || 0;
+
+      // TWD (美股乘 31)
+      const isUS = h.ticker && /^[A-Z]+$/.test(h.ticker) && h.ticker.length <= 5;
+      const twdValue = isUS ? (originalValue * 31) : originalValue;
+      const twdInvested = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
+      const twdUnrealizedDiv = isUS ? (h.unrealizedDividendsTwd || (h.unrealizedDividends * 31)) : h.unrealizedDividends;
+
+      totalMarketValueTwd += twdValue;
+      totalInvestedTwd += twdInvested;
+      totalMarketValueTwd += twdUnrealizedDiv;
     });
 
     const unrealizedPL = totalMarketValue - totalInvested;
@@ -139,7 +199,15 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
     const totalPL = unrealizedPL + totalRealizedPL;
     const roi = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
 
-    return { totalMarketValue, totalInvested, unrealizedPL, totalRealizedPL, totalPL, roi, unrealizedRoi };
+    const unrealizedPLTwd = totalMarketValueTwd - totalInvestedTwd;
+    const unrealizedRoiTwd = totalInvestedTwd > 0 ? (unrealizedPLTwd / totalInvestedTwd) * 100 : 0;
+    const totalPLTwd = unrealizedPLTwd + totalRealizedPLTwd;
+    const roiTwd = totalInvestedTwd > 0 ? (totalPLTwd / totalInvestedTwd) * 100 : 0;
+
+    return { 
+      totalMarketValue, totalInvested, unrealizedPL, totalRealizedPL, totalPL, roi, unrealizedRoi,
+      totalMarketValueTwd, totalInvestedTwd, unrealizedPLTwd, totalRealizedPLTwd, totalPLTwd, roiTwd, unrealizedRoiTwd
+    };
   }, [appData.activeHoldings, appData.realizedList, marketData.prices, weeklyPrices]);
 
   return { appData, stats };

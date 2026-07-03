@@ -229,6 +229,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-black flex items-center gap-3">
             <LayoutDashboard className="text-[var(--accent)]" /> 未實現損益
+            {isUsSector && (
+              <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                美股以固定匯率 31 估算
+              </span>
+            )}
           </h2>
         </div>
 
@@ -237,23 +242,40 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             <div className="stat-label flex items-center gap-2">
               <TrendingUp size={12} className="opacity-50" /> 總投入本金
             </div>
-            <div className="stat-value text-[var(--text-main)] text-2xl font-mono">${stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            <div className="stat-value text-[var(--text-main)] text-2xl font-mono">
+              {isUsSector 
+                ? `NT$${Math.round(stats.totalInvestedTwd || 0).toLocaleString('zh-TW')}`
+                : `$${stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            </div>
           </div>
           <div className="stat-box border-[var(--accent)]/50 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] shadow-[0_0_20px_var(--accent-glow)]">
             <div className="stat-label flex items-center gap-2">
               <PieChartIcon size={12} className="text-[var(--accent)]" /> 當前總市值 (含息)
             </div>
-            <div className="stat-value text-[var(--accent)] text-2xl font-mono">${stats.totalMarketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-          </div>
-          <div className={cn("stat-box transition-all duration-500", stats.unrealizedPL >= 0 ? "border-[var(--success)]/50 shadow-[0_0_15px_rgba(255,69,58,0.1)]" : "border-[var(--danger)]/50 shadow-[0_0_15px_rgba(50,215,75,0.1)]")}>
-            <div className="stat-label flex items-center gap-2">
-              <Activity size={12} className={stats.unrealizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"} /> 帳面總損益 (含息)
-            </div>
-            <div className={cn("stat-value text-2xl font-mono", stats.unrealizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-              {stats.unrealizedPL >= 0 ? '+' : ''}{stats.unrealizedPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              <span className="text-xs ml-2 opacity-60 font-sans tracking-normal">({stats.unrealizedRoi >= 0 ? '+' : ''}{stats.unrealizedRoi.toFixed(2)}%)</span>
+            <div className="stat-value text-[var(--accent)] text-2xl font-mono">
+              {isUsSector
+                ? `NT$${Math.round(stats.totalMarketValueTwd || 0).toLocaleString('zh-TW')}`
+                : `$${stats.totalMarketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </div>
           </div>
+          {(() => {
+            const displayPL = isUsSector ? (stats.unrealizedPLTwd || 0) : stats.unrealizedPL;
+            const displayRoi = isUsSector ? (stats.unrealizedRoiTwd || 0) : stats.unrealizedRoi;
+            return (
+              <div className={cn("stat-box transition-all duration-500", displayPL >= 0 ? "border-[var(--success)]/50 shadow-[0_0_15px_rgba(255,69,58,0.1)]" : "border-[var(--danger)]/50 shadow-[0_0_15px_rgba(50,215,75,0.1)]")}>
+                <div className="stat-label flex items-center gap-2">
+                  <Activity size={12} className={displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"} /> 帳面總損益 (含息)
+                </div>
+                <div className={cn("stat-value text-2xl font-mono", displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                  {displayPL >= 0 ? '+' : ''}
+                  {isUsSector 
+                    ? `NT$${Math.round(displayPL).toLocaleString('zh-TW')}` 
+                    : displayPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  <span className="text-xs ml-2 opacity-60 font-sans tracking-normal">({displayRoi >= 0 ? '+' : ''}{displayRoi.toFixed(2)}%)</span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
