@@ -1,0 +1,407 @@
+[
+  {
+    "date": "2026-01-01",
+    "ticker": "^GSPC",
+    "price": 6920.93
+  },
+  {
+    "date": "2026-01-08",
+    "ticker": "^GSPC",
+    "price": 6926.6
+  },
+  {
+    "date": "2026-01-15",
+    "ticker": "^GSPC",
+    "price": 6875.62
+  },
+  {
+    "date": "2026-01-22",
+    "ticker": "^GSPC",
+    "price": 6978.03
+  },
+  {
+    "date": "2026-01-29",
+    "ticker": "^GSPC",
+    "price": 6882.72
+  },
+  {
+    "date": "2026-02-05",
+    "ticker": "^GSPC",
+    "price": 6941.47
+  },
+  {
+    "date": "2026-02-12",
+    "ticker": "^GSPC",
+    "price": 6881.31
+  },
+  {
+    "date": "2026-02-19",
+    "ticker": "^GSPC",
+    "price": 6946.13
+  },
+  {
+    "date": "2026-02-26",
+    "ticker": "^GSPC",
+    "price": 6869.5
+  },
+  {
+    "date": "2026-03-05",
+    "ticker": "^GSPC",
+    "price": 6775.8
+  },
+  {
+    "date": "2026-03-12",
+    "ticker": "^GSPC",
+    "price": 6624.7
+  },
+  {
+    "date": "2026-03-19",
+    "ticker": "^GSPC",
+    "price": 6591.9
+  },
+  {
+    "date": "2026-03-26",
+    "ticker": "^GSPC",
+    "price": 6575.32
+  },
+  {
+    "date": "2026-04-02",
+    "ticker": "^GSPC",
+    "price": 6782.81
+  },
+  {
+    "date": "2026-04-09",
+    "ticker": "^GSPC",
+    "price": 7022.95
+  },
+  {
+    "date": "2026-04-16",
+    "ticker": "^GSPC",
+    "price": 7137.9
+  },
+  {
+    "date": "2026-04-23",
+    "ticker": "^GSPC",
+    "price": 7135.95
+  },
+  {
+    "date": "2026-04-30",
+    "ticker": "^GSPC",
+    "price": 7365.12
+  },
+  {
+    "date": "2026-05-07",
+    "ticker": "^GSPC",
+    "price": 7444.25
+  },
+  {
+    "date": "2026-05-14",
+    "ticker": "^GSPC",
+    "price": 7432.97
+  },
+  {
+    "date": "2026-05-21",
+    "ticker": "^GSPC",
+    "price": 7520.36
+  },
+  {
+    "date": "2026-05-28",
+    "ticker": "^GSPC",
+    "price": 7553.68
+  },
+  {
+    "date": "2026-06-04",
+    "ticker": "^GSPC",
+    "price": 7266.99
+  },
+  {
+    "date": "2026-06-11",
+    "ticker": "^GSPC",
+    "price": 7420.1
+  },
+  {
+    "date": "2026-06-18",
+    "ticker": "^GSPC",
+    "price": 7358.22
+  },
+  {
+    "date": "2026-06-25",
+    "ticker": "^GSPC",
+    "price": 7483.23
+  },
+  {
+    "date": "2026-07-02",
+    "ticker": "^GSPC",
+    "price": 7483.24
+  },
+  {
+    "date": "2026-01-01",
+    "ticker": "^IXIC",
+    "price": 23584.28
+  },
+  {
+    "date": "2026-01-08",
+    "ticker": "^IXIC",
+    "price": 23471.75
+  },
+  {
+    "date": "2026-01-15",
+    "ticker": "^IXIC",
+    "price": 23224.82
+  },
+  {
+    "date": "2026-01-22",
+    "ticker": "^IXIC",
+    "price": 23857.45
+  },
+  {
+    "date": "2026-01-29",
+    "ticker": "^IXIC",
+    "price": 22904.58
+  },
+  {
+    "date": "2026-02-05",
+    "ticker": "^IXIC",
+    "price": 23066.47
+  },
+  {
+    "date": "2026-02-12",
+    "ticker": "^IXIC",
+    "price": 22753.63
+  },
+  {
+    "date": "2026-02-19",
+    "ticker": "^IXIC",
+    "price": 23152.08
+  },
+  {
+    "date": "2026-02-26",
+    "ticker": "^IXIC",
+    "price": 22807.48
+  },
+  {
+    "date": "2026-03-05",
+    "ticker": "^IXIC",
+    "price": 22716.13
+  },
+  {
+    "date": "2026-03-12",
+    "ticker": "^IXIC",
+    "price": 22152.42
+  },
+  {
+    "date": "2026-03-19",
+    "ticker": "^IXIC",
+    "price": 21929.82
+  },
+  {
+    "date": "2026-03-26",
+    "ticker": "^IXIC",
+    "price": 21840.95
+  },
+  {
+    "date": "2026-04-02",
+    "ticker": "^IXIC",
+    "price": 22634.99
+  },
+  {
+    "date": "2026-04-09",
+    "ticker": "^IXIC",
+    "price": 24016.02
+  },
+  {
+    "date": "2026-04-16",
+    "ticker": "^IXIC",
+    "price": 24657.57
+  },
+  {
+    "date": "2026-04-23",
+    "ticker": "^IXIC",
+    "price": 24673.24
+  },
+  {
+    "date": "2026-04-30",
+    "ticker": "^IXIC",
+    "price": 25838.94
+  },
+  {
+    "date": "2026-05-07",
+    "ticker": "^IXIC",
+    "price": 26402.34
+  },
+  {
+    "date": "2026-05-14",
+    "ticker": "^IXIC",
+    "price": 26270.36
+  },
+  {
+    "date": "2026-05-21",
+    "ticker": "^IXIC",
+    "price": 26674.73
+  },
+  {
+    "date": "2026-05-28",
+    "ticker": "^IXIC",
+    "price": 26853.98
+  },
+  {
+    "date": "2026-06-04",
+    "ticker": "^IXIC",
+    "price": 25169.5
+  },
+  {
+    "date": "2026-06-11",
+    "ticker": "^IXIC",
+    "price": 26021.66
+  },
+  {
+    "date": "2026-06-18",
+    "ticker": "^IXIC",
+    "price": 25476.64
+  },
+  {
+    "date": "2026-06-25",
+    "ticker": "^IXIC",
+    "price": 26040.03
+  },
+  {
+    "date": "2026-07-02",
+    "ticker": "^IXIC",
+    "price": 25832.67
+  },
+  {
+    "date": "2026-01-01",
+    "ticker": "^DJI",
+    "price": 48996.08
+  },
+  {
+    "date": "2026-01-08",
+    "ticker": "^DJI",
+    "price": 49149.63
+  },
+  {
+    "date": "2026-01-15",
+    "ticker": "^DJI",
+    "price": 49077.23
+  },
+  {
+    "date": "2026-01-22",
+    "ticker": "^DJI",
+    "price": 49015.6
+  },
+  {
+    "date": "2026-01-29",
+    "ticker": "^DJI",
+    "price": 49501.3
+  },
+  {
+    "date": "2026-02-05",
+    "ticker": "^DJI",
+    "price": 50121.4
+  },
+  {
+    "date": "2026-02-12",
+    "ticker": "^DJI",
+    "price": 49662.66
+  },
+  {
+    "date": "2026-02-19",
+    "ticker": "^DJI",
+    "price": 49482.15
+  },
+  {
+    "date": "2026-02-26",
+    "ticker": "^DJI",
+    "price": 48739.41
+  },
+  {
+    "date": "2026-03-05",
+    "ticker": "^DJI",
+    "price": 47417.27
+  },
+  {
+    "date": "2026-03-12",
+    "ticker": "^DJI",
+    "price": 46225.15
+  },
+  {
+    "date": "2026-03-19",
+    "ticker": "^DJI",
+    "price": 46429.49
+  },
+  {
+    "date": "2026-03-26",
+    "ticker": "^DJI",
+    "price": 46565.74
+  },
+  {
+    "date": "2026-04-02",
+    "ticker": "^DJI",
+    "price": 47909.92
+  },
+  {
+    "date": "2026-04-09",
+    "ticker": "^DJI",
+    "price": 48463.72
+  },
+  {
+    "date": "2026-04-16",
+    "ticker": "^DJI",
+    "price": 49490.03
+  },
+  {
+    "date": "2026-04-23",
+    "ticker": "^DJI",
+    "price": 48861.81
+  },
+  {
+    "date": "2026-04-30",
+    "ticker": "^DJI",
+    "price": 49910.59
+  },
+  {
+    "date": "2026-05-07",
+    "ticker": "^DJI",
+    "price": 49693.2
+  },
+  {
+    "date": "2026-05-14",
+    "ticker": "^DJI",
+    "price": 50009.35
+  },
+  {
+    "date": "2026-05-21",
+    "ticker": "^DJI",
+    "price": 50644.28
+  },
+  {
+    "date": "2026-05-28",
+    "ticker": "^DJI",
+    "price": 50687.07
+  },
+  {
+    "date": "2026-06-04",
+    "ticker": "^DJI",
+    "price": 49918.78
+  },
+  {
+    "date": "2026-06-11",
+    "ticker": "^DJI",
+    "price": 51492.55
+  },
+  {
+    "date": "2026-06-18",
+    "ticker": "^DJI",
+    "price": 51848.9
+  },
+  {
+    "date": "2026-06-25",
+    "ticker": "^DJI",
+    "price": 52305.24
+  },
+  {
+    "date": "2026-07-02",
+    "ticker": "^DJI",
+    "price": 52900.07
+  }
+]

@@ -161,6 +161,24 @@ export default function App() {
     return { tMap, nMap };
   }, [transactions]);
 
+  // 啟動時自動從 /benchmark_history.json 載入美股指數歷史週價（git 管理，不被 auto-backup 覆蓋）
+  useEffect(() => {
+    fetch('/benchmark_history.json')
+      .then(r => r.json())
+      .then((benchData: Array<{ date: string; ticker: string; price: number }>) => {
+        setWeeklyPrices(prev => {
+          // 移除舊的美股指數資料，以 json 檔案為主
+          const BENCH_TICKERS = ['^GSPC', '^IXIC', '^DJI'];
+          const filtered = prev.filter(p => !BENCH_TICKERS.includes(p.ticker));
+          const merged = [...filtered, ...benchData].sort((a, b) =>
+            a.date.localeCompare(b.date) || a.ticker.localeCompare(b.ticker)
+          );
+          return merged;
+        });
+      })
+      .catch(() => {/* 靜默失敗，不影響其他功能 */});
+  }, []);
+
   // Persistence: Centralized Storage Handler
   useEffect(() => {
     const data = {
