@@ -701,12 +701,17 @@ export default function App() {
         let tickerRealizedPL = 0;
 
         pastTxs.forEach(t => {
+          const isTxUS = t.currency === 'USD';
+          const twdAmount = isTxUS
+            ? (t.twdAmount || (Math.abs(t.totalAmount) * 31))
+            : Math.abs(t.totalAmount);
+
           if (t.direction === 'BUY') {
             shares += t.quantity;
-            cost += t.totalAmount;
+            cost += twdAmount;
           } else if (t.direction === 'SELL') {
             const currentAvg = shares > 0 ? cost / shares : 0;
-            const sellRevenue = Math.abs(t.totalAmount);
+            const sellRevenue = twdAmount;
             const costBasis = currentAvg * t.quantity;
             const profit = sellRevenue - costBasis;
             if (t.date >= '2026-01-01') {
@@ -719,10 +724,10 @@ export default function App() {
             const isRealized = t.isManualRealized !== undefined ? t.isManualRealized : true;
             if (isRealized) {
               if (t.date >= '2026-01-01') {
-                tickerRealizedPL += Math.abs(t.totalAmount);
+                tickerRealizedPL += twdAmount;
               }
             } else {
-              cost -= Math.abs(t.totalAmount);
+              cost -= twdAmount;
             }
           }
         });
@@ -735,7 +740,10 @@ export default function App() {
             .sort((a, b) => b.date.localeCompare(a.date))[0];
 
           const price = priceEntry ? priceEntry.price : (pastTxs[0]?.unitPrice || 0);
-          const value = shares * price;
+          const isTickerUS = isUsStock(ticker);
+          const originalValue = shares * price;
+          const value = isTickerUS ? (originalValue * 31) : originalValue;
+          
           totalValue += value;
           totalCost += cost;
           breakdown[ticker] = Math.floor(value);
@@ -811,9 +819,14 @@ export default function App() {
       const currentTxs = targetTransactions.filter(t => t.date === d.name);
       let cashFlow = 0;
       currentTxs.forEach(t => {
-        if (t.direction === 'BUY') cashFlow += Math.abs(t.totalAmount);
-        if (t.direction === 'SELL') cashFlow -= Math.abs(t.totalAmount);
-        if (t.direction === 'DIVIDEND') cashFlow -= Math.abs(t.totalAmount);
+        const isTxUS = t.currency === 'USD';
+        const twdAmount = isTxUS
+          ? (t.twdAmount || (Math.abs(t.totalAmount) * 31))
+          : Math.abs(t.totalAmount);
+        
+        if (t.direction === 'BUY') cashFlow += twdAmount;
+        if (t.direction === 'SELL') cashFlow -= twdAmount;
+        if (t.direction === 'DIVIDEND') cashFlow -= twdAmount;
       });
 
       const curTw = getInterpolatedPrice(d.name, twPrices, baseTwPrice);
