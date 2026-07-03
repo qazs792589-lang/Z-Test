@@ -626,7 +626,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     </h3>
                   </div>
                   <p className="hidden md:block text-[10px] text-[var(--text-dim)] font-bold opacity-60 ml-9">
-                    Benchmark: TAIEX (台股大盤指數)
+                    Benchmark: {isUsSector ? 'US Indices (美股大盤指數)' : 'TAIEX (台股大盤指數)'}
                   </p>
                 </div>
                 
@@ -862,13 +862,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         animationDuration={1500}
                       />
                     )}
-                    {isUsSector && viewMode === 'ratio' && (
+                    {isUsSector && (
                       <>
                         <Line 
-                          yAxisId="left"
+                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
                           type="monotone" 
                           name="標普 500" 
-                          dataKey="sp500Roi" 
+                          dataKey={viewMode === 'ratio' ? "sp500Roi" : "sp500Price"} 
                           stroke="#10b981" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
@@ -878,10 +878,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           animationDuration={1500}
                         />
                         <Line 
-                          yAxisId="left"
+                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
                           type="monotone" 
                           name="那斯達克" 
-                          dataKey="nasdaqRoi" 
+                          dataKey={viewMode === 'ratio' ? "nasdaqRoi" : "nasdaqPrice"} 
                           stroke="#3b82f6" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
@@ -891,10 +891,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           animationDuration={1500}
                         />
                         <Line 
-                          yAxisId="left"
+                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
                           type="monotone" 
                           name="道瓊工業" 
-                          dataKey="dowRoi" 
+                          dataKey={viewMode === 'ratio' ? "dowRoi" : "dowPrice"} 
                           stroke="#f59e0b" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
