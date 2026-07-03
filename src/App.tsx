@@ -1709,9 +1709,8 @@ export default function App() {
                                           <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{h.currentShares.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 2 })}</p>
                                         </div>
                                         <div>
-                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS && !showTWD ? ' (USD)' : ''}</span>
-                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">{showTWD ? '—' : `$${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}</p>
-                                          {showTWD && <p className="text-[9px] text-[var(--text-dim)] mt-1 opacity-50">無即時匯率</p>}
+                                          <span className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.2em] font-black opacity-60 block mb-2">目前市價{isUS ? ' (USD)' : ''}</span>
+                                          <p className="text-2xl md:text-3xl lg:text-4xl font-mono font-black text-[var(--text-main)] leading-none">${curPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                                         </div>
                                         <div>
                                           {/* 點擊切換幣別 */}
