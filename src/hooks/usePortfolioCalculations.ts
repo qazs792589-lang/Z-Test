@@ -107,8 +107,10 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
             totalCost: costBasis, totalRevenue: sellRevenue, totalFees: (h._mathFees / h._mathShares) * sellQty + tx.fee + tx.tax,
             profit: profit, roi: costBasis > 0 ? (profit / costBasis) * 100 : 0, daysHeld: daysHeld,
             closeDate: tx.date, notes: tx.notes, sellTxId: tx.id,
-            // 附帶台幣盈虧以利後續累加
-            profitTwd: profitTwd
+            // 附帶台幣盈虧、成本、收入
+            profitTwd: profitTwd,
+            totalCostTwd: costBasisTwd,
+            totalRevenueTwd: sellRevenueTwd
           } as any);
         }
 
@@ -147,7 +149,9 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
           realizedList.push({
             ticker: tx.ticker, name: tx.name, shares: 0, buyPrice: 0, sellPrice: 0, totalCost: 0, totalRevenue: dividendAmount,
             totalFees: 0, profit: dividendAmount, roi: 0, daysHeld: 0, closeDate: tx.date, notes: tx.notes || '股息收入', sellTxId: tx.id,
-            profitTwd: dividendAmountTwd
+            profitTwd: dividendAmountTwd,
+            totalCostTwd: 0,
+            totalRevenueTwd: dividendAmountTwd
           } as any);
         } else {
           h.unrealizedDividends += dividendAmount;

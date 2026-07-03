@@ -84,20 +84,21 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       if (realizedItems.length === 0) return;
       const currentShares = appData.holdingsMap?.[ticker]?.currentShares || 0;
 
-      const totalProfit = realizedItems.reduce((sum: number, r: RealizedProfit) => sum + r.profit, 0);
-      const totalRealizedCost = realizedItems.reduce((sum: number, r: RealizedProfit) => sum + r.totalCost, 0);
-      const totalRevenue = realizedItems.reduce((sum: number, r: RealizedProfit) => sum + r.totalRevenue, 0);
+      const totalProfit = realizedItems.reduce((sum: number, r: any) => sum + (r.profitTwd !== undefined ? r.profitTwd : r.profit), 0);
+      const totalRealizedCost = realizedItems.reduce((sum: number, r: any) => sum + (r.totalCostTwd !== undefined ? r.totalCostTwd : r.totalCost), 0);
+      const totalRevenue = realizedItems.reduce((sum: number, r: any) => sum + (r.totalRevenueTwd !== undefined ? r.totalRevenueTwd : r.totalRevenue), 0);
       const totalRealizedShares = realizedItems.reduce((sum: number, r: RealizedProfit) => sum + (r.shares || 0), 0);
 
       const displayRows = [...txs].sort((a, b) => a.date.localeCompare(b.date)).map(tx => {
         const realizedInfo = realizedItems.find((r: RealizedProfit) => r.sellTxId === tx.id);
-        // User requested: Skip ROI for dividends
         const isDividend = tx.direction === 'DIVIDEND';
         
         return {
           ...tx,
-          realizedProfit: realizedInfo?.profit,
-          realizedRoi: isDividend ? undefined : realizedInfo?.roi,
+          realizedProfit: realizedInfo?.profitTwd !== undefined ? realizedInfo.profitTwd : realizedInfo?.profit,
+          realizedRoi: isDividend ? undefined : (realizedInfo?.totalCostTwd !== undefined && realizedInfo.totalCostTwd > 0 
+            ? (realizedInfo.profitTwd / realizedInfo.totalCostTwd) * 100 
+            : realizedInfo?.roi),
           daysHeld: realizedInfo?.daysHeld
         };
       });
@@ -346,16 +347,24 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="flex flex-col items-end">
-                        <span className={cn("text-lg md:text-xl font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                          {group.cumulativeProfit >= 0 ? '+' : ''}{(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        </span>
-                        {group.cumulativeCost > 0 && (
-                          <div className={cn("text-[10px] font-bold flex items-center gap-1", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                            {group.cumulativeProfit >= 0 ? '▲' : '▼'} {group.cumulativeCost > 0 ? ((group.cumulativeProfit / group.cumulativeCost) * 100).toFixed(2) : '0.00'}%
+                      {(() => {
+                        const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
+                        return (
+                          <div className="flex flex-col items-end">
+                            <span className={cn("text-lg md:text-xl font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {group.cumulativeProfit >= 0 ? '+' : ''}
+                              {isUS 
+                                ? `NT$${Math.round(group.cumulativeProfit).toLocaleString('zh-TW')}`
+                                : `$${(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            </span>
+                            {group.cumulativeCost > 0 && (
+                              <div className={cn("text-[10px] font-bold flex items-center gap-1", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                                {group.cumulativeProfit >= 0 ? '▲' : '▼'} {group.cumulativeCost > 0 ? ((group.cumulativeProfit / group.cumulativeCost) * 100).toFixed(2) : '0.00'}%
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -369,30 +378,44 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                         {group.realizedCount} <span className="text-[8px] font-bold text-[var(--text-dim)] ml-0.5 opacity-40">筆</span>
                       </span>
                     </div>
-                    <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
-                      <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
-                        <Wallet size={10} className="opacity-40" /> 歷史成本
-                      </span>
-                      <span className="text-xs md:text-lg font-mono font-black text-[var(--text-main)]">
-                        ${(group.cumulativeCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </span>
-                    </div>
-                    <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
-                      <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
-                        <TrendingUp size={10} className="opacity-40" /> 歷史收入
-                      </span>
-                      <span className="text-xs md:text-lg font-mono font-bold text-[var(--text-main)]">
-                        ${(group.cumulativeRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </span>
-                    </div>
-                    <div className="flex flex-col text-right border-l border-[var(--border)]/30 pl-2">
-                      <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center justify-end gap-1.5">
-                        <Coins size={10} className="opacity-40" /> 已結損益
-                      </span>
-                      <span className={cn("text-xs md:text-lg font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                        {group.cumulativeProfit >= 0 ? '+' : ''}{(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </span>
-                    </div>
+                    {(() => {
+                      const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
+                      return (
+                        <>
+                          <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
+                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                              <Wallet size={10} className="opacity-40" /> 歷史成本
+                            </span>
+                            <span className="text-xs md:text-lg font-mono font-black text-[var(--text-main)]">
+                              {isUS 
+                                ? `NT$${Math.round(group.cumulativeCost || 0).toLocaleString('zh-TW')}`
+                                : `$${(group.cumulativeCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            </span>
+                          </div>
+                          <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
+                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                              <TrendingUp size={10} className="opacity-40" /> 歷史收入
+                            </span>
+                            <span className="text-xs md:text-lg font-mono font-bold text-[var(--text-main)]">
+                              {isUS 
+                                ? `NT$${Math.round(group.cumulativeRevenue || 0).toLocaleString('zh-TW')}`
+                                : `$${(group.cumulativeRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            </span>
+                          </div>
+                          <div className="flex flex-col text-right border-l border-[var(--border)]/30 pl-2">
+                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center justify-end gap-1.5">
+                              <Coins size={10} className="opacity-40" /> 已結損益
+                            </span>
+                            <span className={cn("text-xs md:text-lg font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {group.cumulativeProfit >= 0 ? '+' : ''}
+                              {isUS 
+                                ? `NT$${Math.round(group.cumulativeProfit).toLocaleString('zh-TW')}`
+                                : `$${(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -417,9 +440,12 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                           const isSell = tx.direction === 'SELL';
                           const isDividend = tx.direction === 'DIVIDEND';
                           const totalFees = (tx.fee || 0) + (tx.tax || 0);
+                          const isTxUS = tx.currency === 'USD';
+                          const twdAmount = isTxUS 
+                            ? (tx.twdAmount || (Math.abs(tx.totalAmount) * 31)) 
+                            : Math.abs(tx.totalAmount);
                           
-                          // Cash Flow Logic: BUY is negative (outflow), SELL/DIVIDEND is positive (inflow)
-                          const cashFlow = isBuy ? -tx.totalAmount : Math.abs(tx.totalAmount);
+                          const cashFlowVal = isBuy ? -twdAmount : twdAmount;
                           
                           // Shares sign: BUY is NEGATIVE (green), SELL is POSITIVE (red)
                           const displayQty = isBuy ? -tx.quantity : (isSell ? tx.quantity : 0);
@@ -439,14 +465,22 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                                 {totalFees > 0 ? `$${totalFees.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-black text-right whitespace-nowrap", 
-                                isDividend ? "text-amber-500" : (cashFlow >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
+                                isDividend ? "text-amber-500" : (cashFlowVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
-                                {cashFlow !== 0 ? `${cashFlow > 0 ? '+' : ''}${cashFlow.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
+                                {cashFlowVal !== 0 
+                                  ? (isTxUS 
+                                    ? `${cashFlowVal > 0 ? '+' : ''}NT$${Math.round(cashFlowVal).toLocaleString('zh-TW')}`
+                                    : `${cashFlowVal > 0 ? '+' : ''}$${cashFlowVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+                                  : '-'}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-bold text-right whitespace-nowrap", 
                                 isDividend ? "text-amber-500" : (tx.realizedProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
-                                {tx.realizedProfit !== undefined ? `${tx.realizedProfit >= 0 ? '+' : ''}${tx.realizedProfit.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
+                                {tx.realizedProfit !== undefined 
+                                  ? (isTxUS
+                                    ? `${tx.realizedProfit >= 0 ? '+' : ''}NT$${Math.round(tx.realizedProfit).toLocaleString('zh-TW')}`
+                                    : `${tx.realizedProfit >= 0 ? '+' : ''}$${tx.realizedProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+                                  : '-'}
                               </td>
                               <td className="px-6 py-4 text-center whitespace-nowrap">
                                 {tx.realizedRoi !== undefined ? (

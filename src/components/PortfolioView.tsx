@@ -60,6 +60,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onUpdateAssetClass
 }) => {
   const [page, setPage] = useState(0);
+  const [displayCurrency, setDisplayCurrency] = useState<'USD' | 'TWD'>('USD');
   const [viewMode, setViewMode] = useState<'ratio' | 'absolute'>('ratio');
   const [mDate, setMDate] = useState(new Date().toISOString().split('T')[0]);
   const [mPrice, setMPrice] = useState('');
@@ -238,39 +239,68 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="stat-box group hover:border-[var(--accent)] transition-all duration-300">
-            <div className="stat-label flex items-center gap-2">
+          <div 
+            onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+            className={cn("stat-box group transition-all duration-300", isUsSector && "cursor-pointer hover:border-[var(--accent)]")}
+          >
+            <div className="stat-label flex items-center gap-2 select-none">
               <TrendingUp size={12} className="opacity-50" /> 總投入本金
+              {isUsSector && (
+                <span className="text-[9px] bg-blue-500/10 text-blue-400 font-bold px-1.5 py-0.5 rounded ml-1 group-hover:bg-blue-500/20">
+                  {displayCurrency === 'TWD' ? 'NT$' : 'USD'} ⇄
+                </span>
+              )}
             </div>
             <div className="stat-value text-[var(--text-main)] text-2xl font-mono">
               {isUsSector 
-                ? `NT$${Math.round(stats.totalInvestedTwd || 0).toLocaleString('zh-TW')}`
+                ? (displayCurrency === 'TWD'
+                  ? `NT$${Math.round(stats.totalInvestedTwd || 0).toLocaleString('zh-TW')}`
+                  : `$${stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
                 : `$${stats.totalInvested.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </div>
           </div>
-          <div className="stat-box border-[var(--accent)]/50 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] shadow-[0_0_20px_var(--accent-glow)]">
-            <div className="stat-label flex items-center gap-2">
+          <div 
+            onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+            className={cn("stat-box border-[var(--accent)]/50 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] shadow-[0_0_20px_var(--accent-glow)] group transition-all", isUsSector && "cursor-pointer hover:border-[var(--accent)]")}
+          >
+            <div className="stat-label flex items-center gap-2 select-none">
               <PieChartIcon size={12} className="text-[var(--accent)]" /> 當前總市值 (含息)
+              {isUsSector && (
+                <span className="text-[9px] bg-blue-500/10 text-blue-400 font-bold px-1.5 py-0.5 rounded ml-1 group-hover:bg-blue-500/20">
+                  {displayCurrency === 'TWD' ? 'NT$' : 'USD'} ⇄
+                </span>
+              )}
             </div>
             <div className="stat-value text-[var(--accent)] text-2xl font-mono">
               {isUsSector
-                ? `NT$${Math.round(stats.totalMarketValueTwd || 0).toLocaleString('zh-TW')}`
+                ? (displayCurrency === 'TWD'
+                  ? `NT$${Math.round(stats.totalMarketValueTwd || 0).toLocaleString('zh-TW')}`
+                  : `$${stats.totalMarketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
                 : `$${stats.totalMarketValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             </div>
           </div>
           {(() => {
-            const displayPL = isUsSector ? (stats.unrealizedPLTwd || 0) : stats.unrealizedPL;
-            const displayRoi = isUsSector ? (stats.unrealizedRoiTwd || 0) : stats.unrealizedRoi;
+            const isTwd = isUsSector && displayCurrency === 'TWD';
+            const displayPL = isTwd ? (stats.unrealizedPLTwd || 0) : stats.unrealizedPL;
+            const displayRoi = isTwd ? (stats.unrealizedRoiTwd || 0) : stats.unrealizedRoi;
             return (
-              <div className={cn("stat-box transition-all duration-500", displayPL >= 0 ? "border-[var(--success)]/50 shadow-[0_0_15px_rgba(255,69,58,0.1)]" : "border-[var(--danger)]/50 shadow-[0_0_15px_rgba(50,215,75,0.1)]")}>
-                <div className="stat-label flex items-center gap-2">
+              <div 
+                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+                className={cn("stat-box transition-all duration-500 group", displayPL >= 0 ? "border-[var(--success)]/50 shadow-[0_0_15px_rgba(255,69,58,0.1)]" : "border-[var(--danger)]/50 shadow-[0_0_15px_rgba(50,215,75,0.1)]", isUsSector && "cursor-pointer hover:border-opacity-100")}
+              >
+                <div className="stat-label flex items-center gap-2 select-none">
                   <Activity size={12} className={displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"} /> 帳面總損益 (含息)
+                  {isUsSector && (
+                    <span className="text-[9px] bg-blue-500/10 text-blue-400 font-bold px-1.5 py-0.5 rounded ml-1 group-hover:bg-blue-500/20">
+                      {displayCurrency === 'TWD' ? 'NT$' : 'USD'} ⇄
+                    </span>
+                  )}
                 </div>
                 <div className={cn("stat-value text-2xl font-mono", displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                   {displayPL >= 0 ? '+' : ''}
-                  {isUsSector 
+                  {isTwd 
                     ? `NT$${Math.round(displayPL).toLocaleString('zh-TW')}` 
-                    : displayPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    : `$${displayPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                   <span className="text-xs ml-2 opacity-60 font-sans tracking-normal">({displayRoi >= 0 ? '+' : ''}{displayRoi.toFixed(2)}%)</span>
                 </div>
               </div>
@@ -405,27 +435,77 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-y-6 gap-x-4 pt-6 border-t border-[var(--border)]/50">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">最新收盤價</span>
-                            <span className="text-lg font-mono font-black text-[var(--text-main)]">${curPrice.toFixed(2)}</span>
-                          </div>
-                          <div className="flex flex-col text-right">
-                            <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">總市值</span>
-                            <span className="text-lg font-mono font-black text-[var(--accent)]">${(curPrice * h.currentShares).toLocaleString()}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">平均成本</span>
-                            <span className="text-base font-mono font-bold text-[var(--text-dim)]">${h.avgCost.toFixed(2)}</span>
-                          </div>
-                          <div className="flex flex-col text-right">
-                            <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">帳面損益 / 報酬率</span>
-                            <div className={cn("flex flex-col items-end", hpl >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                              <span className="text-lg font-mono font-black leading-none">{hpl >= 0 ? '+' : ''}{hpl.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                              <span className="text-xs font-black mt-1">{hroi >= 0 ? '▲' : '▼'} {Math.abs(hroi).toFixed(2)}%</span>
+                        {(() => {
+                          const isTwd = isUsSector && displayCurrency === 'TWD';
+                          const twdCost = (h as any).totalInvestedTwd || 0;
+                          const twdValue = curPrice * h.currentShares * 31;
+                          const twdHpl = twdValue - twdCost;
+                          const twdHroi = twdCost > 0 ? (twdHpl / twdCost) * 100 : 0;
+
+                          const displayPriceStr = isTwd 
+                            ? `$${curPrice.toFixed(2)} (NT$${Math.round(curPrice * 31).toLocaleString()})`
+                            : `$${curPrice.toFixed(2)}`;
+                          
+                          const displayValueStr = isTwd
+                            ? `NT$${Math.round(twdValue).toLocaleString('zh-TW')}`
+                            : `$${(curPrice * h.currentShares).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+
+                          const displayCostStr = isTwd
+                            ? `NT$${Math.round((h as any).avgCostTwd || 0).toLocaleString('zh-TW')}`
+                            : `$${h.avgCost.toFixed(2)}`;
+
+                          const currentHpl = isTwd ? twdHpl : hpl;
+                          const currentHroi = isTwd ? twdHroi : hroi;
+
+                          return (
+                            <div className="grid grid-cols-2 gap-y-6 gap-x-4 pt-6 border-t border-[var(--border)]/50">
+                              <div 
+                                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+                                className={cn("flex flex-col select-none", isUsSector && "cursor-pointer hover:opacity-80")}
+                              >
+                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
+                                  最新收盤價 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                </span>
+                                <span className="text-lg font-mono font-black text-[var(--text-main)]">{displayPriceStr}</span>
+                              </div>
+                              <div 
+                                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+                                className={cn("flex flex-col text-right select-none", isUsSector && "cursor-pointer hover:opacity-80")}
+                              >
+                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
+                                  總市值 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                </span>
+                                <span className="text-lg font-mono font-black text-[var(--accent)]">{displayValueStr}</span>
+                              </div>
+                              <div 
+                                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+                                className={cn("flex flex-col select-none", isUsSector && "cursor-pointer hover:opacity-80")}
+                              >
+                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
+                                  平均成本 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                </span>
+                                <span className="text-base font-mono font-bold text-[var(--text-dim)]">{displayCostStr}</span>
+                              </div>
+                              <div 
+                                onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
+                                className={cn("flex flex-col text-right select-none", isUsSector && "cursor-pointer hover:opacity-80")}
+                              >
+                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
+                                  帳面損益 / 報酬率 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                </span>
+                                <div className={cn("flex flex-col items-end", currentHpl >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                                  <span className="text-lg font-mono font-black leading-none">
+                                    {currentHpl >= 0 ? '+' : ''}
+                                    {isTwd 
+                                      ? `NT$${Math.round(currentHpl).toLocaleString('zh-TW')}`
+                                      : currentHpl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                  </span>
+                                  <span className="text-xs font-black mt-1">{currentHroi >= 0 ? '▲' : '▼'} {Math.abs(currentHroi).toFixed(2)}%</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

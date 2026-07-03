@@ -715,6 +715,38 @@
       "notes": "",
       "currency": "USD",
       "twdAmount": 9567
+    },
+    {
+      "id": "sc83j7nkp",
+      "date": "2026-07-01",
+      "ticker": "SPCX",
+      "name": "SPCX",
+      "direction": "BUY",
+      "quantity": 1,
+      "unitPrice": 201,
+      "category": "General",
+      "fee": 0.2,
+      "tax": 0,
+      "totalAmount": 201.2,
+      "notes": "",
+      "currency": "USD",
+      "twdAmount": 6700
+    },
+    {
+      "id": "metwp7fq1",
+      "date": "2026-07-02",
+      "ticker": "SPCX",
+      "name": "SPCX",
+      "direction": "SELL",
+      "quantity": 1,
+      "unitPrice": 235,
+      "category": "General",
+      "fee": 0.5,
+      "tax": 0,
+      "totalAmount": -234.5,
+      "notes": "",
+      "currency": "USD",
+      "twdAmount": 7200
     }
   ],
   "tickerOrder": [
