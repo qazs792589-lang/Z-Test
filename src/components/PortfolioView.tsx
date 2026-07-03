@@ -862,13 +862,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         animationDuration={1500}
                       />
                     )}
-                    {isUsSector && (
+                    {isUsSector && viewMode === 'ratio' && (
                       <>
                         <Line 
-                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
+                          yAxisId="left"
                           type="monotone" 
                           name="標普 500" 
-                          dataKey={viewMode === 'ratio' ? "sp500Roi" : "sp500Price"} 
+                          dataKey="sp500Roi" 
                           stroke="#10b981" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
@@ -878,10 +878,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           animationDuration={1500}
                         />
                         <Line 
-                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
+                          yAxisId="left"
                           type="monotone" 
                           name="那斯達克" 
-                          dataKey={viewMode === 'ratio' ? "nasdaqRoi" : "nasdaqPrice"} 
+                          dataKey="nasdaqRoi" 
                           stroke="#3b82f6" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
@@ -891,10 +891,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           animationDuration={1500}
                         />
                         <Line 
-                          yAxisId={viewMode === 'ratio' ? "left" : "right"}
+                          yAxisId="left"
                           type="monotone" 
                           name="道瓊工業" 
-                          dataKey={viewMode === 'ratio' ? "dowRoi" : "dowPrice"} 
+                          dataKey="dowRoi" 
                           stroke="#f59e0b" 
                           strokeWidth={2.5} 
                           strokeDasharray="6 3" 
