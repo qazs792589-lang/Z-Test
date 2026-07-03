@@ -110,20 +110,14 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       const lastOpDate = txs.reduce((latest: string, tx: any) => tx.date > latest ? tx.date : latest, '0000-00-00');
 
       const h = appData.holdingsMap?.[ticker];
-      const curPrice = marketPrices[ticker] || h?.avgCost || 0;
       const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
       
       let unrealizedPLTwd = 0;
       let unrealizedCostTwd = 0;
       
       if (h && currentShares > 0) {
-        const originalValue = curPrice * h.currentShares;
-        const twdValue = isUS ? (originalValue * 31) : originalValue;
-        const twdInvested = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
-        const twdUnrealizedDiv = isUS ? (h.unrealizedDividendsTwd || (h.unrealizedDividends * 31)) : h.unrealizedDividends;
-        
-        unrealizedPLTwd = twdValue - twdInvested + (twdUnrealizedDiv || 0);
-        unrealizedCostTwd = twdInvested;
+        unrealizedPLTwd = h.unrealizedPLTwd || 0;
+        unrealizedCostTwd = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
       }
       
       const totalPLTwd = totalProfit + unrealizedPLTwd;

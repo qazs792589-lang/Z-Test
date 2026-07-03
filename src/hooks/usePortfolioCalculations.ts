@@ -17,6 +17,9 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
       unrealizedDividendsTwd: number;
       avgCostTwd: number;
       _mathCostTwd: number;
+      latestPrice?: number;
+      unrealizedPL?: number;
+      unrealizedPLTwd?: number;
     }> = {};
     const realizedList: RealizedProfit[] = [];
     const stockGroups: Record<string, Transaction[]> = {};
@@ -158,6 +161,26 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
           h.unrealizedDividendsTwd += dividendAmountTwd;
         }
       }
+    });
+
+    Object.values(holdings).forEach(h => {
+      const latestWeekly = weeklyPrices
+        .filter(wp => wp.ticker === h.ticker)
+        .sort((a, b) => b.date.localeCompare(a.date))[0]?.price;
+
+      const price = marketData.prices[h.ticker] || latestWeekly || h.avgCost;
+      h.latestPrice = price;
+
+      // 原幣未實現
+      h.unrealizedPL = (price * h.currentShares - h.totalInvested) + (h.unrealizedDividends || 0);
+
+      // 台幣未實現
+      const isUS = h.ticker && /^[A-Z]+$/.test(h.ticker) && h.ticker.length <= 5;
+      const twdValue = isUS ? (price * h.currentShares * 31) : (price * h.currentShares);
+      const twdInvested = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
+      const twdUnrealizedDiv = isUS ? (h.unrealizedDividendsTwd || (h.unrealizedDividends * 31)) : h.unrealizedDividends;
+
+      h.unrealizedPLTwd = twdValue - twdInvested + (twdUnrealizedDiv || 0);
     });
 
     const activeHoldings = Object.values(holdings).filter(h => h.currentShares > 0 || h.unrealizedDividends > 0);

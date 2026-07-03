@@ -747,6 +747,21 @@
       "notes": "",
       "currency": "USD",
       "twdAmount": 7200
+    },
+    {
+      "id": "h00l82qqg",
+      "date": "2026-07-02",
+      "ticker": "0056",
+      "name": "0056",
+      "direction": "BUY",
+      "quantity": 1000,
+      "unitPrice": 61,
+      "category": "General",
+      "fee": 20,
+      "tax": 0,
+      "totalAmount": 61020,
+      "notes": "",
+      "currency": "TWD"
     }
   ],
   "tickerOrder": [
@@ -2824,6 +2839,11 @@
       "price": 293.42
     },
     {
+      "date": "2026-07-02",
+      "ticker": "0056",
+      "price": 59
+    },
+    {
       "date": "2026-07-03",
       "ticker": "^TWII",
       "price": 46780.62
@@ -2852,6 +2872,11 @@
       "date": "2026-07-03",
       "ticker": "8033",
       "price": 204.5
+    },
+    {
+      "date": "2026-07-03",
+      "ticker": "0056",
+      "price": 59
     }
   ],
   "theme": "light",
