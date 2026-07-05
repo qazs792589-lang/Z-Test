@@ -1990,6 +1990,7 @@ export default function App() {
               tickerMetadata={tickerMetadata}
               holdings={appData.activeHoldings}
               marketPrices={marketData.prices}
+              weeklyPrices={weeklyPrices}
             />
           )}
 

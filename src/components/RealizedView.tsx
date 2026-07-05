@@ -118,8 +118,19 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       let unrealizedCostTwd = 0;
       
       if (h && currentShares > 0) {
-        unrealizedPLTwd = h.unrealizedPLTwd || 0;
-        unrealizedCostTwd = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
+        const latestWeekly = (weeklyPrices || [])
+          .filter((wp: any) => wp.ticker === ticker)
+          .sort((a: any, b: any) => b.date.localeCompare(a.date))[0]?.price;
+        const price = marketPrices[ticker] || latestWeekly || h.avgCost;
+
+        if (isUS) {
+          unrealizedCostTwd = h.totalInvestedTwd || (h.totalInvested * 31);
+          const twdValue = price * h.currentShares * 31;
+          unrealizedPLTwd = twdValue - unrealizedCostTwd;
+        } else {
+          unrealizedCostTwd = h.totalInvested;
+          unrealizedPLTwd = (price * h.currentShares) - h.totalInvested;
+        }
       }
       
       const totalPLTwd = totalProfit + unrealizedPLTwd;
@@ -147,7 +158,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       if (!a[1].isHolding && b[1].isHolding) return 1;
       return b[1].lastOpDate.localeCompare(a[1].lastOpDate);
     });
-  }, [appData?.stockGroups, appData?.realizedList, appData?.holdingsMap]);
+  }, [appData?.stockGroups, appData?.realizedList, appData?.holdingsMap, weeklyPrices, marketPrices]);
 
   const globalRealized = useMemo(() => {
     const list = appData?.realizedList || [];
