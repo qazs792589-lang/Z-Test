@@ -296,7 +296,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總成本</span>
               </div>
               <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
-                NT${Math.round(globalRealized.cost || 0).toLocaleString('zh-TW')}
+                ${Math.round(globalRealized.cost || 0).toLocaleString()}
               </p>
             </div>
 
@@ -309,7 +309,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總收入</span>
               </div>
               <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
-                NT${Math.round(globalRealized.revenue || 0).toLocaleString('zh-TW')}
+                ${Math.round(globalRealized.revenue || 0).toLocaleString()}
               </p>
             </div>
 
@@ -336,7 +336,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
               </div>
               <div className="flex items-baseline gap-2">
                 <p className={cn("text-xl md:text-3xl font-mono font-black tracking-tight", globalRealized.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                  {globalRealized.profit >= 0 ? '+' : ''}NT${Math.round(globalRealized.profit).toLocaleString('zh-TW')}
+                  {globalRealized.profit >= 0 ? '+' : ''}${Math.round(globalRealized.profit).toLocaleString()}
                 </p>
                 <span className={cn("text-[10px] md:text-xs font-black font-mono px-2 py-0.5 rounded-full", globalRealized.roi >= 0 ? "text-[var(--success)] bg-[var(--success)]/10" : "text-[var(--danger)] bg-[var(--danger)]/10")}>
                   {globalRealized.roi >= 0 ? '▲' : '▼'}{Math.abs(globalRealized.roi).toFixed(1)}%
@@ -371,47 +371,20 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                     </div>
                     <div className="text-right">
                       {(() => {
-                        const realizedPL = group.cumulativeProfit;
-                        const realizedRoi = group.cumulativeCost > 0 ? (realizedPL / group.cumulativeCost) * 100 : 0;
-
-                        const h = appData.holdingsMap?.[ticker];
-                        const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
-                        
-                        let unrealizedPL = 0;
-                        let unrealizedRoi = 0;
-                        
-                        if (h && h.currentShares > 0) {
-                          unrealizedPL = h.unrealizedPLTwd || 0;
-                          const unrealizedCostTwd = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
-                          unrealizedRoi = unrealizedCostTwd > 0 ? (unrealizedPL / unrealizedCostTwd) * 100 : 0;
-                        }
-
+                        const displayVal = group.totalPLTwd;
+                        const displayRoi = group.totalRoi;
                         return (
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
-                              <span className="text-[9px] text-[var(--text-dim)] uppercase tracking-wider opacity-60">已實現:</span>
-                              <span className={realizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                                {realizedPL >= 0 ? '+' : ''}
-                                {`$${Math.round(realizedPL).toLocaleString()}`}
-                              </span>
-                              {group.cumulativeCost > 0 && (
-                                <span className={cn("text-[9px] font-bold px-1 py-0.2 rounded bg-opacity-10", realizedPL >= 0 ? "text-[var(--success)] bg-[var(--success)]" : "text-[var(--danger)] bg-[var(--danger)]")}>
-                                  {realizedPL >= 0 ? '▲' : '▼'}{Math.abs(realizedRoi).toFixed(1)}%
-                                </span>
-                              )}
+                          <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-1 opacity-50">
+                              {group.isHolding ? '全期總收益' : '已實現收益'}
+                            </span>
+                            <span className={cn("text-lg md:text-xl font-mono font-black", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {displayVal >= 0 ? '+' : ''}
+                              {`$${Math.round(displayVal || 0).toLocaleString()}`}
+                            </span>
+                            <div className={cn("text-[10px] font-bold flex items-center gap-1 mt-0.5", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              {displayVal >= 0 ? '▲' : '▼'} {displayRoi.toFixed(2)}%
                             </div>
-                            {group.isHolding && (
-                              <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
-                                <span className="text-[9px] text-[var(--text-dim)] uppercase tracking-wider opacity-60">未實現:</span>
-                                <span className={unrealizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}>
-                                  {unrealizedPL >= 0 ? '+' : ''}
-                                  {`$${Math.round(unrealizedPL).toLocaleString()}`}
-                                </span>
-                                <span className={cn("text-[9px] font-bold px-1 py-0.2 rounded bg-opacity-10", unrealizedPL >= 0 ? "text-[var(--success)] bg-[var(--success)]" : "text-[var(--danger)] bg-[var(--danger)]")}>
-                                  {unrealizedPL >= 0 ? '▲' : '▼'}{Math.abs(unrealizedRoi).toFixed(1)}%
-                                </span>
-                              </div>
-                            )}
                           </div>
                         );
                       })()}
@@ -429,7 +402,6 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                       </span>
                     </div>
                     {(() => {
-                      const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
                       return (
                         <>
                           <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
@@ -437,9 +409,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                               <Wallet size={10} className="opacity-40" /> 歷史成本
                             </span>
                             <span className="text-xs md:text-lg font-mono font-black text-[var(--text-main)]">
-                              {isUS 
-                                ? `NT$${Math.round(group.cumulativeCost || 0).toLocaleString('zh-TW')}`
-                                : `$${(group.cumulativeCost || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                              {`$${Math.round(group.cumulativeCost || 0).toLocaleString()}`}
                             </span>
                           </div>
                           <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
@@ -447,9 +417,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                               <TrendingUp size={10} className="opacity-40" /> 歷史收入
                             </span>
                             <span className="text-xs md:text-lg font-mono font-bold text-[var(--text-main)]">
-                              {isUS 
-                                ? `NT$${Math.round(group.cumulativeRevenue || 0).toLocaleString('zh-TW')}`
-                                : `$${(group.cumulativeRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                              {`$${Math.round(group.cumulativeRevenue || 0).toLocaleString()}`}
                             </span>
                           </div>
                           <div className="flex flex-col text-right border-l border-[var(--border)]/30 pl-2">
@@ -458,9 +426,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                             </span>
                             <span className={cn("text-xs md:text-lg font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                               {group.cumulativeProfit >= 0 ? '+' : ''}
-                              {isUS 
-                                ? `NT$${Math.round(group.cumulativeProfit).toLocaleString('zh-TW')}`
-                                : `$${(group.cumulativeProfit || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                              {`$${Math.round(group.cumulativeProfit).toLocaleString()}`}
                             </span>
                             {group.cumulativeCost > 0 && (
                               <span className={cn("text-[9px] font-bold block mt-0.5", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
@@ -523,18 +489,14 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                                 isDividend ? "text-amber-500" : (cashFlowVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
                                 {cashFlowVal !== 0 
-                                  ? (isTxUS 
-                                    ? `${cashFlowVal > 0 ? '+' : ''}NT$${Math.round(cashFlowVal).toLocaleString('zh-TW')}`
-                                    : `${cashFlowVal > 0 ? '+' : ''}$${cashFlowVal.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+                                  ? `${cashFlowVal > 0 ? '+' : ''}$${Math.round(cashFlowVal).toLocaleString()}`
                                   : '-'}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-bold text-right whitespace-nowrap", 
                                 isDividend ? "text-amber-500" : (tx.realizedProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
                                 {tx.realizedProfit !== undefined 
-                                  ? (isTxUS
-                                    ? `${tx.realizedProfit >= 0 ? '+' : ''}NT$${Math.round(tx.realizedProfit).toLocaleString('zh-TW')}`
-                                    : `${tx.realizedProfit >= 0 ? '+' : ''}$${tx.realizedProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+                                  ? `${tx.realizedProfit >= 0 ? '+' : ''}$${Math.round(tx.realizedProfit).toLocaleString()}`
                                   : '-'}
                               </td>
                               <td className="px-6 py-4 text-center whitespace-nowrap">
