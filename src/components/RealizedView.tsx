@@ -16,12 +16,14 @@ interface RealizedViewProps {
   tickerMetadata: Record<string, { assetClass?: string }>;
   holdings: Holding[];
   marketPrices: Record<string, number>;
+  weeklyPrices?: any[];
 }
 
 export const RealizedView: React.FC<RealizedViewProps> = ({ 
   appData, onImport, onUpdateNotes, onToggleRealized, 
   netWorthEntries, setNetWorthEntries, historicalChartData = [],
-  tickerMetadata = {}, holdings = [], marketPrices = {}
+  tickerMetadata = {}, holdings = [], marketPrices = {},
+  weeklyPrices = []
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -369,23 +371,47 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                     </div>
                     <div className="text-right">
                       {(() => {
+                        const realizedPL = group.cumulativeProfit;
+                        const realizedRoi = group.cumulativeCost > 0 ? (realizedPL / group.cumulativeCost) * 100 : 0;
+
+                        const h = appData.holdingsMap?.[ticker];
                         const isUS = ticker && /^[A-Z]+$/.test(ticker) && ticker.length <= 5;
-                        const displayVal = group.totalPLTwd;
-                        const displayRoi = group.totalRoi;
+                        
+                        let unrealizedPL = 0;
+                        let unrealizedRoi = 0;
+                        
+                        if (h && h.currentShares > 0) {
+                          unrealizedPL = h.unrealizedPLTwd || 0;
+                          const unrealizedCostTwd = isUS ? (h.totalInvestedTwd || (h.totalInvested * 31)) : h.totalInvested;
+                          unrealizedRoi = unrealizedCostTwd > 0 ? (unrealizedPL / unrealizedCostTwd) * 100 : 0;
+                        }
+
                         return (
-                          <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-1 opacity-50">
-                              {group.isHolding ? '全期總收益' : '已實現收益'}
-                            </span>
-                            <span className={cn("text-lg md:text-xl font-mono font-black", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                              {displayVal >= 0 ? '+' : ''}
-                              {isUS 
-                                ? `NT$${Math.round(displayVal).toLocaleString('zh-TW')}`
-                                : `$${Math.round(displayVal || 0).toLocaleString()}`}
-                            </span>
-                            <div className={cn("text-[10px] font-bold flex items-center gap-1 mt-0.5", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
-                              {displayVal >= 0 ? '▲' : '▼'} {displayRoi.toFixed(2)}%
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
+                              <span className="text-[9px] text-[var(--text-dim)] uppercase tracking-wider opacity-60">已實現:</span>
+                              <span className={realizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}>
+                                {realizedPL >= 0 ? '+' : ''}
+                                {`$${Math.round(realizedPL).toLocaleString()}`}
+                              </span>
+                              {group.cumulativeCost > 0 && (
+                                <span className={cn("text-[9px] font-bold px-1 py-0.2 rounded bg-opacity-10", realizedPL >= 0 ? "text-[var(--success)] bg-[var(--success)]" : "text-[var(--danger)] bg-[var(--danger)]")}>
+                                  {realizedPL >= 0 ? '▲' : '▼'}{Math.abs(realizedRoi).toFixed(1)}%
+                                </span>
+                              )}
                             </div>
+                            {group.isHolding && (
+                              <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
+                                <span className="text-[9px] text-[var(--text-dim)] uppercase tracking-wider opacity-60">未實現:</span>
+                                <span className={unrealizedPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}>
+                                  {unrealizedPL >= 0 ? '+' : ''}
+                                  {`$${Math.round(unrealizedPL).toLocaleString()}`}
+                                </span>
+                                <span className={cn("text-[9px] font-bold px-1 py-0.2 rounded bg-opacity-10", unrealizedPL >= 0 ? "text-[var(--success)] bg-[var(--success)]" : "text-[var(--danger)] bg-[var(--danger)]")}>
+                                  {unrealizedPL >= 0 ? '▲' : '▼'}{Math.abs(unrealizedRoi).toFixed(1)}%
+                                </span>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
