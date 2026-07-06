@@ -186,7 +186,7 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
     const activeHoldings = Object.values(holdings).filter(h => h.currentShares > 0 || h.unrealizedDividends > 0);
 
     return { activeHoldings, realizedList, stockGroups, holdingsMap: holdings };
-  }, [transactions]);
+  }, [transactions, marketData, weeklyPrices]);
 
   const stats = useMemo(() => {
     let totalMarketValue = 0;
@@ -221,15 +221,19 @@ export const usePortfolioCalculations = (transactions: Transaction[], marketData
       totalMarketValueTwd += twdUnrealizedDiv;
     });
 
+    const totalRealizedCost = appData.realizedList.reduce((sum, r) => sum + (r.totalCost || 0), 0);
+    const totalCost = totalRealizedCost + totalInvested;
     const unrealizedPL = totalMarketValue - totalInvested;
     const unrealizedRoi = totalInvested > 0 ? (unrealizedPL / totalInvested) * 100 : 0;
     const totalPL = unrealizedPL + totalRealizedPL;
-    const roi = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
+    const roi = totalCost > 0 ? (totalPL / totalCost) * 100 : 0;
 
+    const totalRealizedCostTwd = appData.realizedList.reduce((sum, r) => sum + ((r as any).totalCostTwd ?? r.totalCost ?? 0), 0);
+    const totalCostTwd = totalRealizedCostTwd + totalInvestedTwd;
     const unrealizedPLTwd = totalMarketValueTwd - totalInvestedTwd;
     const unrealizedRoiTwd = totalInvestedTwd > 0 ? (unrealizedPLTwd / totalInvestedTwd) * 100 : 0;
     const totalPLTwd = unrealizedPLTwd + totalRealizedPLTwd;
-    const roiTwd = totalInvestedTwd > 0 ? (totalPLTwd / totalInvestedTwd) * 100 : 0;
+    const roiTwd = totalCostTwd > 0 ? (totalPLTwd / totalCostTwd) * 100 : 0;
 
     return { 
       totalMarketValue, totalInvested, unrealizedPL, totalRealizedPL, totalPL, roi, unrealizedRoi,
