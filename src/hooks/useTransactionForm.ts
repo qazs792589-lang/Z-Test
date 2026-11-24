@@ -12,90 +12,29 @@ export const useTransactionForm = (configs: Record<TransactionCategory, Config>)
     category: 'General' as TransactionCategory,
     customFee: 0,
     customTax: 0,
-    manualFee: '' as string | number,
-    manualTax: '' as string | number,
+    manualFee: 0 as string | number, // Added for manual override
+    manualTax: 0 as string | number,
     currency: 'TWD' as 'TWD' | 'USD',
     twdRate: 31.5,
-    twdAmount: 0, // 美股時由使用者直接輸入的實際台幣結算金額
+    twdAmount: 0,
     notes: '' as string
   });
 
   const preview = useMemo(() => {
     const subtotal = formData.unitPrice * formData.quantity;
-    const config = configs[formData.category] || configs['General'];
-    let fee = 0;
-    let tax = 0;
-
-    if (formData.direction === 'DIVIDEND') {
-      const total = -subtotal;
-      return {
-        fee: 0,
-        tax: 0,
-        total,
-        feeLabel: '免手續費',
-        feeFormula: '股息發放不扣券商手續費',
-        taxLabel: '免徵交稅',
-        taxFormula: '股息不屬於證券交易，故無交易稅',
-        autoFee: 0,
-        autoTax: 0
-      };
-    }
-
-    // Calculate auto fee and tax first
-    const feeRate = formData.direction === 'BUY' ? config.buyFeeRate : config.sellFeeRate;
-    const autoFee = Math.max(config.minFee, Math.floor(subtotal * feeRate * config.discount));
-    const autoTax = formData.direction === 'SELL' ? Math.floor(subtotal * config.taxRate) : 0;
-
-    // Use manual fee if provided, otherwise use auto/custom logic
-    if (formData.manualFee !== '') {
-      fee = parseFloat(formData.manualFee as string) || 0;
-    } else if (formData.category === 'Custom') {
-      fee = formData.customFee;
-    } else {
-      fee = autoFee;
-    }
-
-    // Use manual tax if provided, otherwise use auto/custom logic (tax only on SELL)
-    if (formData.direction === 'SELL') {
-      if (formData.manualTax !== '') {
-        tax = parseFloat(formData.manualTax as string) || 0;
-      } else if (formData.category === 'Custom') {
-        tax = formData.customTax;
-      } else {
-        tax = autoTax;
-      }
-    } else {
-      tax = 0;
-    }
+    const fee = formData.manualFee === '' ? 0 : (parseFloat(String(formData.manualFee)) || 0);
+    const tax = formData.manualTax === '' ? 0 : (parseFloat(String(formData.manualTax)) || 0);
     const total = formData.direction === 'BUY' ? subtotal + fee + tax : -(subtotal - fee - tax);
-
-    // Formulas strings for display
-    const feeFormula = formData.manualFee !== '' 
-      ? `手動輸入: ${fee.toLocaleString()}` 
-      : `max(${config.minFee}, floor(${subtotal.toLocaleString()} × ${formData.direction === 'BUY' ? config.buyFeeRate : config.sellFeeRate} × ${config.discount}))`;
-    const taxFormula = formData.manualTax !== '' && formData.direction === 'SELL'
-      ? `手動輸入: ${tax.toLocaleString()}`
-      : formData.direction === 'SELL' ? `floor(${subtotal.toLocaleString()} × ${config.taxRate})` : '免徵';
-
-    // Plain language explanations
-    const feeFormulaPlain = formData.manualFee !== ''
-      ? `已使用手動輸入的手續費 $${fee.toLocaleString()}。`
-      : formData.direction === 'DIVIDEND'
-      ? '股息領取無需付給券商手續費'
-      : fee === config.minFee
-        ? `手續費不足 ${config.minFee} 元，以最低 ${config.minFee} 元計收。`
-        : `成交金額 $${subtotal.toLocaleString()} 乘以費率 ${config.buyFeeRate * 100}% 再打 ${config.discount * 10} 折。`;
-
-    const taxFormulaPlain = formData.manualTax !== '' && formData.direction === 'SELL'
-      ? `已使用手動輸入的證券交易稅 $${tax.toLocaleString()}。`
-      : formData.direction === 'SELL'
-      ? `賣出金額 $${subtotal.toLocaleString()} 乘以稅率 ${(config.taxRate * 100).toFixed(2)}%。`
-      : formData.direction === 'BUY' ? '只有在賣出股票時才需要繳納證交稅。' : '免徵稅';
-
-    const feeLabel = formData.manualFee !== '' ? '手續費 (手動)' : `手續費 (${(config.discount * 10).toFixed(1)}折)`;
-    const taxLabel = formData.manualTax !== '' && formData.direction === 'SELL' ? '證券交易稅 (手動)' : `證券交易稅 (${(config.taxRate * 100).toFixed(2)}%)`;
-
-    return { fee, tax, total, feeFormula, taxFormula, feeLabel, taxLabel, feeFormulaPlain, taxFormulaPlain, autoFee, autoTax };
+    const feeLabel = '手續費／匯費';
+    const taxLabel = formData.direction === 'DIVIDEND' ? '股息扣款' : '證券交易稅';
+    return {
+      fee, tax, total, feeLabel, taxLabel,
+      feeFormula: '手動輸入：' + fee.toLocaleString(),
+      taxFormula: '手動輸入：' + tax.toLocaleString(),
+      feeFormulaPlain: '預設 0，請依實際交割費用填寫。',
+      taxFormulaPlain: '預設 0，請依實際交割稅額或股息扣款填寫。',
+      autoFee: 0, autoTax: 0
+    };
   }, [formData, configs]);
 
   return { formData, setFormData, preview };

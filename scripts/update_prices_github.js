@@ -49,12 +49,13 @@ function getLatestBackupFile() {
 function getHeldTickers(backupFilePath) {
   const tickers = new Set();
   
-  // 永遠包含大盤、重要美股指數以及 QQQM
+  // 永遠包含大盤、重要美股指數以及 QQQM、NVDA
   tickers.add('^TWII');
   tickers.add('^IXIC');
   tickers.add('^GSPC');
   tickers.add('^DJI');
   tickers.add('QQQM');
+  tickers.add('NVDA');
 
   if (!backupFilePath) {
     console.log('[股價更新] 未找到備份檔案，將採用預設監控名單 (^TWII, ^IXIC, ^GSPC, ^DJI, 2330, 0050)');

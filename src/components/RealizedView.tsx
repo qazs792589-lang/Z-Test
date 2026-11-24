@@ -1,8 +1,10 @@
+import { compareTransactionsNewestFirst, ensureTransactionSequence } from '../lib/transactionOrder';
+import { getEvenDateTicks } from '../lib/chartDisplay';
 import { History, FileUp, ChevronDown, PieChart as PieChartIcon, Activity, TrendingUp, Edit2, Trash2, Plus, Layers, LineChart as LucideLineChart, Check, ChevronRight, Clock, Wallet, Coins } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import { cn } from '../lib/utils';
 import { RealizedProfit, Transaction, Holding } from '../types';
-import { isTxRealized } from '../lib/txUtils';
+import { isTxRealized, getSellNetAmounts, getDividendNetAmounts } from '../lib/txUtils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 
 interface RealizedViewProps {
@@ -25,6 +27,8 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
   tickerMetadata = {}, holdings = [], marketPrices = {},
   weeklyPrices = []
 }) => {
+  const [dateAxisWidth, setDateAxisWidth] = useState(360);
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -78,6 +82,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       cumulativeShares: number;
       realizedCount: number;
       isHolding: boolean;
+      hasUnrealizedDividends: boolean;
       lastOpDate: string;
       totalPLTwd: number;
       totalCostTwd: number;
@@ -94,7 +99,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       const totalRevenue = realizedItems.reduce((sum: number, r: any) => sum + (r.totalRevenueTwd !== undefined ? r.totalRevenueTwd : r.totalRevenue), 0);
       const totalRealizedShares = realizedItems.reduce((sum: number, r: RealizedProfit) => sum + (r.shares || 0), 0);
 
-      const displayRows = [...txs].sort((a, b) => a.date.localeCompare(b.date)).map(tx => {
+      const displayRows = [...ensureTransactionSequence(txs)].sort(compareTransactionsNewestFirst).map(tx => {
         const realizedInfo = realizedItems.find((r: RealizedProfit) => r.sellTxId === tx.id);
         const isDividend = tx.direction === 'DIVIDEND';
         
@@ -133,7 +138,11 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
         }
       }
       
-      const totalPLTwd = totalProfit + unrealizedPLTwd;
+      // 股息的歸類不應改變全期收益；清倉後尚未歸入已實現的股息也要保留。
+      const unrealizedDividendsTwd = isUS
+        ? (h?.unrealizedDividendsTwd ?? ((h?.unrealizedDividends || 0) * 31))
+        : (h?.unrealizedDividends || 0);
+      const totalPLTwd = totalProfit + unrealizedPLTwd + unrealizedDividendsTwd;
       const totalCostTwd = totalRealizedCost + unrealizedCostTwd;
       const totalRoi = totalCostTwd > 0 ? (totalPLTwd / totalCostTwd) * 100 : 0;
 
@@ -144,8 +153,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
         cumulativeCost: totalRealizedCost,
         cumulativeRevenue: totalRevenue,
         cumulativeShares: totalRealizedShares,
-        realizedCount: realizedItems.length,
+        realizedCount: realizedItems.filter((r: RealizedProfit) => r.shares > 0).length,
         isHolding: currentShares > 0,
+        hasUnrealizedDividends: unrealizedDividendsTwd !== 0,
         lastOpDate,
         totalPLTwd,
         totalCostTwd,
@@ -166,8 +176,15 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
     const cost = list.reduce((sum: number, r: any) => sum + (r.totalCostTwd !== undefined ? r.totalCostTwd : r.totalCost), 0);
     const revenue = list.reduce((sum: number, r: any) => sum + (r.totalRevenueTwd !== undefined ? r.totalRevenueTwd : r.totalRevenue), 0);
     const roi = cost > 0 ? (profit / cost) * 100 : 0;
-    return { profit, cost, revenue, roi, count: list.length };
+    // 核心帳務僅賣出紀錄具有正股數；零股數股息保留金額但不計為交易。
+    return { profit, cost, revenue, roi, count: list.filter((r: RealizedProfit) => r.shares > 0).length };
   }, [appData?.realizedList]);
+
+  const usTickers = useMemo(() => new Set(
+    Object.entries(appData?.stockGroups || {})
+      .filter(([, transactions]) => (transactions as Transaction[]).some(tx => tx.currency === 'USD'))
+      .map(([ticker]) => ticker)
+  ), [appData?.stockGroups]);
 
   const categoryData = useMemo(() => {
     const categories: Record<string, number> = {};
@@ -176,9 +193,12 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
     const holdings = appData?.holdingsMap ? Object.values(appData.holdingsMap) : [];
     holdings.forEach((h: any) => {
       if (!h.currentShares || h.currentShares <= 0) return;
-      const curPrice = marketPrices[h.ticker] || h.avgCost;
-      const value = curPrice * h.currentShares;
-      const cat = tickerMetadata[h.ticker]?.assetClass || '股票';
+      const latestWeekly = weeklyPrices.filter(point => point.ticker === h.ticker).sort((a, b) => b.date.localeCompare(a.date))[0]?.price;
+      const curPrice = marketPrices[h.ticker] || latestWeekly || h.avgCost;
+      const isUs = usTickers.has(h.ticker);
+      const value = curPrice * h.currentShares * (isUs ? 31 : 1);
+      const configuredClass = tickerMetadata[h.ticker]?.assetClass;
+      const cat = !configuredClass || configuredClass === '股票' ? (isUs ? '美股（固定匯率）' : '台股') : configuredClass;
       categories[cat] = (categories[cat] || 0) + value;
     });
 
@@ -198,7 +218,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [appData?.holdingsMap, marketPrices, tickerMetadata, netWorthEntries]);
+  }, [appData?.holdingsMap, marketPrices, weeklyPrices, tickerMetadata, netWorthEntries, usTickers]);
 
   const netWorthChartData = useMemo(() => {
     if (!netWorthEntries) return [];
@@ -206,6 +226,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       const history = historicalChartData || [];
       const stockEntry = history.filter(d => d.name <= entry.date).reverse()[0] || history[0];
       const stockValue = stockEntry?.value || 0;
+      const usStockValue = Object.entries(stockEntry?.breakdown || {}).reduce((sum, [ticker, value]) => sum + (usTickers.has(ticker) ? Number(value) || 0 : 0), 0);
+      // Preserve the existing total and its integer rounding when splitting the display columns.
+      const twStockValue = stockValue - usStockValue;
       
       let otherAssetsTotal = 0;
       if (entry.assets) {
@@ -219,16 +242,19 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
       return {
         ...entry,
         stockValue,
+        twStockValue,
+        usStockValue,
         total
       };
     }).sort((a, b) => a.date.localeCompare(b.date));
-  }, [netWorthEntries, historicalChartData]);
+  }, [netWorthEntries, historicalChartData, usTickers]);
 
   const COLORS = ['#7000ff', '#ff00c8', '#ffcc00', '#00ff88', '#ff4400', '#44ff00', '#888888', '#00f2ff', '#0066ff', '#33ffcc'];
   const CAT_COLORS: Record<string, string> = {
     '股票': '#00f2ff',
     '台股': '#00f2ff',
     '美股': '#7000ff',
+    '美股（固定匯率）': '#7000ff',
     'ETF': '#ff00c8',
     '債券': '#ffcc00',
     '現金': '#00ff88',
@@ -252,7 +278,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
             <input type="file" ref={fileInputRef} onChange={onImport} accept=".csv" className="hidden" />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-dim)] active:scale-90 transition-all shadow-sm"
+              className="rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-dim)] active:scale-90 transition-all shadow-sm p-2.5"
               title="匯入歷史 CSV"
             >
               <FileUp size={18} />
@@ -265,7 +291,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
             <button 
               onClick={() => setActiveTab('details')}
               className={cn(
-                "px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                "rounded-lg font-black uppercase tracking-widest transition-all flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] md:text-xs",
                 activeTab === 'details' ? "bg-[var(--accent)] text-[var(--bg-primary)] shadow-lg" : "text-[var(--text-dim)]"
               )}
             >
@@ -274,7 +300,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
             <button 
               onClick={() => setActiveTab('networth')}
               className={cn(
-                "px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                "rounded-lg font-black uppercase tracking-widest transition-all flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] md:text-xs",
                 activeTab === 'networth' ? "bg-[var(--accent)] text-[var(--bg-primary)] shadow-lg" : "text-[var(--text-dim)]"
               )}
             >
@@ -286,7 +312,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
             <input type="file" ref={fileInputRef} onChange={onImport} accept=".csv" className="hidden" />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-[10px] font-black text-[var(--text-dim)] hover:text-[var(--accent)] transition-all uppercase tracking-widest shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] font-black text-[var(--text-dim)] hover:text-[var(--accent)] transition-all uppercase tracking-widest shadow-sm p-2.5"
             >
               <FileUp size={14} /> 匯入歷史 CSV
             </button>
@@ -304,9 +330,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <div className="p-2 rounded-xl bg-[var(--text-dim)]/5 text-[var(--text-dim)] group-hover:bg-[var(--accent)]/10 group-hover:text-[var(--accent)] transition-all duration-500">
                   <Wallet size={16} />
                 </div>
-                <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總成本</span>
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.15em] text-[10px] md:text-xs">歷史總成本</span>
               </div>
-              <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
+              <p className="font-mono font-black text-[var(--text-main)] tracking-tight text-xl md:text-2xl">
                 ${Math.round(globalRealized.cost || 0).toLocaleString()}
               </p>
             </div>
@@ -317,9 +343,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <div className="p-2 rounded-xl bg-[var(--text-dim)]/5 text-[var(--accent)] group-hover:bg-[var(--accent)]/10 transition-all duration-500">
                   <TrendingUp size={16} />
                 </div>
-                <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總收入</span>
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.15em] text-[10px] md:text-xs">歷史總收入</span>
               </div>
-              <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
+              <p className="font-mono font-black text-[var(--text-main)] tracking-tight text-xl md:text-2xl">
                 ${Math.round(globalRealized.revenue || 0).toLocaleString()}
               </p>
             </div>
@@ -330,10 +356,10 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <div className="p-2 rounded-xl bg-[var(--text-dim)]/5 text-[var(--text-dim)] group-hover:bg-[var(--accent)]/10 group-hover:text-[var(--accent)] transition-all duration-500">
                   <Activity size={16} />
                 </div>
-                <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">交易筆數</span>
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.15em] text-[10px] md:text-xs">交易筆數</span>
               </div>
               <p className="text-xl md:text-2xl font-mono font-black text-[var(--text-main)] tracking-tight">
-                {globalRealized.count} <span className="text-[10px] font-bold text-[var(--text-dim)] ml-1 opacity-60">筆</span>
+                {globalRealized.count} <span className="font-bold text-[var(--text-dim)] ml-1 opacity-60 text-[10px]">筆</span>
               </p>
             </div>
 
@@ -343,13 +369,13 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                 <div className={cn("p-2 rounded-xl transition-all duration-500", globalRealized.profit >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--danger)]/10 text-[var(--danger)]")}>
                   <Coins size={16} />
                 </div>
-                <span className="text-[10px] md:text-xs text-[var(--text-dim)] font-black uppercase tracking-[0.15em]">歷史總收益</span>
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.15em] text-[10px] md:text-xs">歷史總收益</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <p className={cn("text-xl md:text-3xl font-mono font-black tracking-tight", globalRealized.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                <p className={cn("font-mono font-black tracking-tight text-xl md:text-2xl", globalRealized.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                   {globalRealized.profit >= 0 ? '+' : ''}${Math.round(globalRealized.profit).toLocaleString()}
                 </p>
-                <span className={cn("text-[10px] md:text-xs font-black font-mono px-2 py-0.5 rounded-full", globalRealized.roi >= 0 ? "text-[var(--success)] bg-[var(--success)]/10" : "text-[var(--danger)] bg-[var(--danger)]/10")}>
+                <span className={cn("font-black font-mono px-2 py-0.5 rounded-full text-[10px] md:text-xs", globalRealized.roi >= 0 ? "text-[var(--success)] bg-[var(--success)]/10" : "text-[var(--danger)] bg-[var(--danger)]/10")}>
                   {globalRealized.roi >= 0 ? '▲' : '▼'}{Math.abs(globalRealized.roi).toFixed(1)}%
                 </span>
               </div>
@@ -372,7 +398,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                         <div className="flex items-center gap-2">
                           <span className="text-lg md:text-xl font-black text-[var(--text-main)] uppercase tracking-tight">{group.name}</span>
                           {group.isHolding && (
-                            <span className="bg-[var(--accent)]/10 text-[var(--accent)] text-[9px] px-2 py-0.5 rounded-md font-bold border border-[var(--accent)]/20">
+                            <span className="bg-[var(--accent)]/10 text-[var(--accent)] px-2 py-0.5 rounded-md font-bold border border-[var(--accent)]/20 text-[9px]">
                               仍持倉中
                             </span>
                           )}
@@ -387,9 +413,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                         return (
                           <div className="flex flex-col items-end">
                             <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-1 opacity-50">
-                              {group.isHolding ? '全期總收益' : '已實現收益'}
+                              {group.isHolding || group.hasUnrealizedDividends ? '全期總收益' : '已實現收益'}
                             </span>
-                            <span className={cn("text-lg md:text-xl font-mono font-black", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                            <span className={cn("text-base md:text-lg font-mono font-black", displayVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                               {displayVal >= 0 ? '+' : ''}
                               {`$${Math.round(displayVal || 0).toLocaleString()}`}
                             </span>
@@ -405,18 +431,18 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                   {/* Header Metrics */}
                   <div className="grid grid-cols-4 gap-2 md:gap-4 pt-5 border-t border-[var(--border)]/50 mt-4">
                     <div className="flex flex-col">
-                      <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                      <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5 text-[10px] md:text-xs">
                         <Activity size={10} className="opacity-40" /> 交易筆數
                       </span>
                       <span className="text-xs md:text-lg font-mono font-black text-[var(--text-main)]">
-                        {group.realizedCount} <span className="text-[8px] font-bold text-[var(--text-dim)] ml-0.5 opacity-40">筆</span>
+                        {group.realizedCount} <span className="font-bold text-[var(--text-dim)] ml-0.5 opacity-40 text-[10px]">筆</span>
                       </span>
                     </div>
                     {(() => {
                       return (
                         <>
                           <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
-                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                            <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5 text-[8px] md:text-[10px]">
                               <Wallet size={10} className="opacity-40" /> 歷史成本
                             </span>
                             <span className="text-xs md:text-lg font-mono font-black text-[var(--text-main)]">
@@ -424,7 +450,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                             </span>
                           </div>
                           <div className="flex flex-col border-l border-[var(--border)]/30 pl-2">
-                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                            <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5 text-[8px] md:text-[10px]">
                               <TrendingUp size={10} className="opacity-40" /> 歷史收入
                             </span>
                             <span className="text-xs md:text-lg font-mono font-bold text-[var(--text-main)]">
@@ -432,7 +458,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                             </span>
                           </div>
                           <div className="flex flex-col text-right border-l border-[var(--border)]/30 pl-2">
-                            <span className="text-[8px] md:text-[10px] text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center justify-end gap-1.5">
+                            <span className="text-[var(--text-dim)] font-black uppercase tracking-[0.1em] mb-1.5 flex items-center justify-end gap-1.5 text-[8px] md:text-[10px]">
                               <Coins size={10} className="opacity-40" /> 已結損益
                             </span>
                             <span className={cn("text-xs md:text-lg font-mono font-black", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
@@ -440,7 +466,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                               {`$${Math.round(group.cumulativeProfit).toLocaleString()}`}
                             </span>
                             {group.cumulativeCost > 0 && (
-                              <span className={cn("text-[9px] font-bold block mt-0.5", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                              <span className={cn("font-bold block mt-0.5 text-[10px] md:text-xs", group.cumulativeProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                 {group.cumulativeProfit >= 0 ? '▲' : '▼'} {((group.cumulativeProfit / group.cumulativeCost) * 100).toFixed(2)}%
                               </span>
                             )}
@@ -460,9 +486,9 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                           <th className="px-6 py-4 text-center whitespace-nowrap">單價</th>
                           <th className="px-6 py-4 text-center whitespace-nowrap">股數</th>
                           <th className="px-6 py-4 text-center whitespace-nowrap">額外費用</th>
-                          <th className="px-6 py-4 text-center whitespace-nowrap">淨收支</th>
-                          <th className="px-6 py-4 text-center whitespace-nowrap">已結損益</th>
-                          <th className="px-6 py-4 text-center whitespace-nowrap">ROI%</th>
+                          <th className="px-6 py-4 text-center whitespace-nowrap">淨收支（NT$）</th>
+                          <th className="px-6 py-4 text-center whitespace-nowrap">已結損益（NT$）</th>
+                          <th className="px-6 py-4 text-center whitespace-nowrap">ROI%（損益率）</th>
                           <th className="px-6 py-4 text-right whitespace-nowrap">備註</th>
                         </tr>
                       </thead>
@@ -477,7 +503,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                             ? (tx.twdAmount || (Math.abs(tx.totalAmount) * 31)) 
                             : Math.abs(tx.totalAmount);
                           
-                          const cashFlowVal = isBuy ? -twdAmount : twdAmount;
+                          const cashFlowVal = isSell ? getSellNetAmounts(tx).twd : (isBuy ? -twdAmount : getDividendNetAmounts(tx).twd);
                           
                           // Shares sign: BUY is NEGATIVE (green), SELL is POSITIVE (red)
                           const displayQty = isBuy ? -tx.quantity : (isSell ? tx.quantity : 0);
@@ -486,7 +512,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                             <tr key={tx.id} className={cn("hover:bg-[var(--bg-secondary)]/30 transition-colors", !isTxRealized(tx) && "bg-[var(--bg-tertiary)]/50")}>
                               <td className="px-6 py-4 font-mono text-xs text-center whitespace-nowrap">{tx.date}</td>
                               <td className="px-6 py-4 font-mono text-xs text-right text-[var(--text-dim)] whitespace-nowrap">
-                                {isDividend ? '-' : `$${(tx.unitPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+                                {isDividend ? '-' : `${isTxUS ? 'USD $' : 'NT$'}${(tx.unitPrice || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-bold text-right whitespace-nowrap", 
                                 isBuy ? "text-[var(--danger)]" : (isSell ? "text-[var(--success)]" : "text-[var(--text-dim)]")
@@ -494,25 +520,25 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                                 {displayQty !== 0 ? `${displayQty > 0 ? '+' : ''}${displayQty.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
                               </td>
                               <td className="px-6 py-4 font-mono text-xs text-right text-[var(--text-main)] whitespace-nowrap">
-                                {totalFees > 0 ? `$${totalFees.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
+                                {totalFees > 0 ? `${isTxUS ? 'USD $' : 'NT$'}${totalFees.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-black text-right whitespace-nowrap", 
                                 isDividend ? "text-amber-500" : (cashFlowVal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
                                 {cashFlowVal !== 0 
-                                  ? `${cashFlowVal > 0 ? '+' : ''}$${Math.round(cashFlowVal).toLocaleString()}`
+                                  ? `${cashFlowVal > 0 ? '+' : ''}NT$${Math.round(cashFlowVal).toLocaleString()}`
                                   : '-'}
                               </td>
                               <td className={cn("px-6 py-4 font-mono text-xs font-bold text-right whitespace-nowrap", 
                                 isDividend ? "text-amber-500" : (tx.realizedProfit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")
                               )}>
                                 {tx.realizedProfit !== undefined 
-                                  ? `${tx.realizedProfit >= 0 ? '+' : ''}$${Math.round(tx.realizedProfit).toLocaleString()}`
+                                  ? `${tx.realizedProfit >= 0 ? '+' : ''}NT$${Math.round(tx.realizedProfit).toLocaleString()}`
                                   : '-'}
                               </td>
                               <td className="px-6 py-4 text-center whitespace-nowrap">
                                 {tx.realizedRoi !== undefined ? (
-                                  <span className={cn("text-[10px] px-2 py-0.5 rounded font-bold whitespace-nowrap", tx.realizedRoi >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--danger)]/10 text-[var(--danger)]")}>
+                                  <span className={cn("px-2 py-0.5 rounded font-bold whitespace-nowrap text-[10px] md:text-xs", tx.realizedRoi >= 0 ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--danger)]/10 text-[var(--danger)]")}>
                                     {tx.realizedRoi.toFixed(1)}%
                                   </span>
                                 ) : '-'}
@@ -536,7 +562,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                                       e.stopPropagation();
                                       startEditing(tx.id, tx.notes || '');
                                     }}
-                                    className="text-xs md:text-[13px] text-[var(--text-main)] font-semibold truncate max-w-[180px] ml-auto cursor-pointer hover:text-[var(--accent)] transition-colors"
+                                    className="text-[var(--text-main)] font-semibold truncate max-w-[180px] ml-auto cursor-pointer hover:text-[var(--accent)] transition-colors text-xs md:text-[13px]"
                                     title="點擊編輯備註"
                                   >
                                     {tx.notes || <span className="opacity-30">新增備註...</span>}
@@ -559,13 +585,13 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
           {/* Net Worth Summary Stats */}
           <div className="grid grid-cols-2 gap-4">
             <div className="elegant-card p-5 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)]">
-              <span className="text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1">目前總淨資產</span>
-              <p className="text-2xl md:text-3xl font-mono font-black text-[var(--text-main)]">
+              <span className="text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1 text-[9px]">目前總淨資產</span>
+              <p className="font-mono font-black text-[var(--text-main)] text-xl md:text-2xl">
                 ${(currentTotalAssets || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
             </div>
             <div className="elegant-card p-5 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)]">
-              <span className="text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1">近期資產變動</span>
+              <span className="text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1 text-[9px]">近期資產變動</span>
               <p className={cn("text-2xl md:text-3xl font-mono font-black", assetsChange >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                 {assetsChange >= 0 ? '+' : ''}{(assetsChange || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </p>
@@ -573,9 +599,10 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
           </div>
 
           {/* Asset Category Allocation Chart */}
+          <p className="text-[10px] text-[var(--text-dim)]">股票市值依各筆資產紀錄日期計算；美股以固定匯率31換算為NT$。</p>
           {categoryData.length > 0 && (
             <div className="elegant-card p-5 relative border-[var(--border)] shadow-xl bg-opacity-40">
-              <h4 className="text-[10px] font-black opacity-60 flex items-center gap-2 mb-6 uppercase tracking-[0.2em] text-[var(--accent)]">
+              <h4 className="font-black opacity-60 flex items-center gap-2 mb-6 uppercase tracking-[0.2em] text-[var(--accent)] text-[10px]">
                 <PieChartIcon size={12} /> 資產類別權重
               </h4>
               <div className="flex items-center gap-6">
@@ -609,7 +636,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                           <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
                           <span className="text-[10px] font-bold text-[var(--text-dim)]">{item.name}</span>
                         </div>
-                        <span className="text-[10px] font-mono font-black text-[var(--text-main)]">
+                        <span className="font-mono font-black text-[var(--text-main)] text-[10px] md:text-xs">
                           {((item.value / (categoryData.reduce((acc, curr) => acc + curr.value, 0) || 1)) * 100).toFixed(1)}%
                         </span>
                       </div>
@@ -622,11 +649,11 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
 
           {/* Chart Section */}
           <div className="elegant-card p-6">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)] mb-6 flex items-center gap-2">
+            <h4 className="font-black uppercase tracking-widest text-[var(--text-main)] mb-6 flex items-center gap-2 text-xs">
               <Activity size={14} className="text-[var(--accent)]" /> 總資產成長趨勢 (Net Worth)
             </h4>
             <div className="h-[300px] md:h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" onResize={(width) => setDateAxisWidth(width)}>
                 <AreaChart data={netWorthChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -635,7 +662,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.2} />
-                  <XAxis dataKey="date" stroke="var(--text-dim)" fontSize={10} axisLine={false} tickLine={false} tickMargin={10} tickFormatter={(str) => str?.split('-')?.slice(1)?.join('/') || str} />
+                  <XAxis ticks={getEvenDateTicks(netWorthChartData.map(point => point.date), dateAxisWidth)} interval={0} minTickGap={0} padding={{ left: 12, right: 12 }} dataKey="date" stroke="var(--text-dim)" fontSize={10} axisLine={false} tickLine={false} tickMargin={10} tickFormatter={(str) => str?.split('-')?.slice(1)?.join('/') || str} />
                   <YAxis stroke="var(--text-dim)" fontSize={10} axisLine={false} tickLine={false} tickMargin={10} width={60} tickFormatter={(v) => `$${((v || 0)/1000).toFixed(0)}k`} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px' }}
@@ -659,13 +686,13 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                   <Edit2 size={18} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black uppercase tracking-widest text-[var(--text-main)]">記錄資產分配</h4>
-                  <p className="text-[10px] text-[var(--text-dim)] font-bold mt-0.5">手動登記非股票資產以計算總淨值</p>
+                  <h4 className="font-black uppercase tracking-widest text-[var(--text-main)] text-sm">記錄資產分配</h4>
+                  <p className="text-[var(--text-dim)] font-bold mt-0.5 text-[10px]">手動登記非股票資產以計算總淨值</p>
                 </div>
               </div>
               <button 
                 onClick={handleAddCustomAssetType}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--accent)] text-[10px] font-black uppercase tracking-widest hover:bg-[var(--accent)] hover:text-[var(--bg-primary)] transition-all group"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--accent)] font-black uppercase tracking-widest hover:bg-[var(--accent)] hover:text-[var(--bg-primary)] transition-all group px-4 py-2 text-[10px]"
               >
                 <Plus size={14} className="group-hover:scale-110 transition-transform" /> 
                 新增資產類別
@@ -674,7 +701,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
             
             <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-5 items-end">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--text-dim)] ml-1">記錄日期</label>
+                <label className="font-black uppercase tracking-[0.15em] text-[var(--text-dim)] ml-1 text-[10px]">記錄日期</label>
                 <input 
                   type="date" 
                   className="elegant-input text-xs h-12 px-4 bg-[var(--bg-secondary)]"
@@ -714,7 +741,7 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                   setNewAssetValues(cleared);
                   alert('資產分配已成功記錄！');
                 }}
-                className="bg-[var(--accent)] text-[var(--bg-primary)] h-12 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--accent)]/20"
+                className="bg-[var(--accent)] text-[var(--bg-primary)] rounded-xl font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--accent)]/20 h-12 text-xs"
               >
                 儲存當前分配
               </button>
@@ -724,10 +751,10 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
           {/* Historical Data Table */}
           <div className="elegant-card p-0 overflow-hidden border-[var(--border)] shadow-xl">
             <div className="p-6 border-b border-[var(--border)] bg-[var(--bg-secondary)]/50 flex items-center justify-between">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--text-main)] flex items-center gap-2">
+              <h4 className="font-black uppercase tracking-[0.2em] text-[var(--text-main)] flex items-center gap-2 text-[11px]">
                 <History size={14} className="text-[var(--accent)]" /> 歷史紀錄清單
               </h4>
-              <span className="text-[9px] font-bold text-[var(--text-dim)] bg-[var(--bg-tertiary)] px-2 py-1 rounded text-uppercase">
+              <span className="font-bold text-[var(--text-dim)] bg-[var(--bg-tertiary)] px-2 py-1 rounded text-uppercase text-[9px]">
                 共 {netWorthEntries.length} 筆資料
               </span>
             </div>
@@ -740,7 +767,8 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                     {assetKeys.map(key => (
                       <th key={key} className="px-6 py-5">{key}</th>
                     ))}
-                    <th className="px-6 py-5">股票市值</th>
+                    <th className="px-6 py-5">台股市值</th>
+                    <th className="px-6 py-5">美股市值（固定匯率）</th>
                     <th className="px-6 py-5 text-right">總淨值 (Net Worth)</th>
                     <th className="px-6 py-5 w-20"></th>
                   </tr>
@@ -757,11 +785,14 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                           </td>
                         );
                       })}
-                      <td className="px-6 py-5 font-mono text-xs text-[var(--accent)] font-bold">
-                        ${(entry.stockValue || 0).toLocaleString()}
+                      <td className="px-6 py-5 font-mono text-[var(--accent)] font-bold text-xs">
+                        NT${(entry.twStockValue || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-5 font-mono text-[var(--accent)] font-bold text-xs">
+                        NT${(entry.usStockValue || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <span className="font-mono font-black text-sm text-[var(--text-main)] bg-[var(--accent)]/5 px-2 py-1 rounded">
+                        <span className="font-mono font-black text-[var(--text-main)] bg-[var(--accent)]/5 px-2 py-1 rounded text-base md:text-lg">
                           ${(entry.total || 0).toLocaleString()}
                         </span>
                       </td>
@@ -781,10 +812,10 @@ export const RealizedView: React.FC<RealizedViewProps> = ({
                   ))}
                   {netWorthEntries.length === 0 && (
                     <tr>
-                      <td colSpan={assetKeys.length + 4} className="px-6 py-20 text-center">
+                      <td colSpan={assetKeys.length + 5} className="px-6 py-20 text-center">
                         <div className="flex flex-col items-center opacity-20">
                           <History size={40} className="mb-4" />
-                          <p className="text-xs font-black uppercase tracking-widest">目前尚無紀錄</p>
+                          <p className="font-black uppercase tracking-widest text-xs">目前尚無紀錄</p>
                         </div>
                       </td>
                     </tr>

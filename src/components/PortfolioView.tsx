@@ -1,3 +1,5 @@
+import { getEvenDateTicks, inclusiveUnrealizedRoi } from '../lib/chartDisplay';
+import { getBenchmarkSummary, US_BENCHMARKS } from '../lib/usDisplay';
 import React, { useMemo, useState, useEffect } from 'react';
 import { LayoutDashboard, Activity, Edit2, TrendingUp, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Layers, Trash2, Calendar, X } from 'lucide-react';
 import {
@@ -27,6 +29,10 @@ interface PortfolioViewProps {
     unrealizedPL: number;
     roi: number;
     unrealizedRoi: number;
+    totalInvestedTwd?: number;
+    totalMarketValueTwd?: number;
+    unrealizedPLTwd?: number;
+    hasEstimatedTwdCost?: boolean;
   };
   chartData: any[];
   appData: {
@@ -59,12 +65,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   tickerMetadata,
   onUpdateAssetClass
 }) => {
+  const [dateAxisWidth, setDateAxisWidth] = useState(360);
+
   const [page, setPage] = useState(0);
-  const [displayCurrency, setDisplayCurrency] = useState<'USD' | 'TWD'>('USD');
+  const [displayCurrency, setDisplayCurrency] = useState<'USD' | 'TWD'>(isUsSector ? 'TWD' : 'USD');
   const [viewMode, setViewMode] = useState<'ratio' | 'absolute'>('ratio');
   const [mDate, setMDate] = useState(new Date().toISOString().split('T')[0]);
   const [mPrice, setMPrice] = useState('');
   const [selectedUsTicker, setSelectedUsTicker] = useState('^GSPC');
+  const [comparisonTicker, setComparisonTicker] = useState<string | null>(null);
+  const benchmarkSummary = getBenchmarkSummary(chartData, isUsSector, comparisonTicker ?? '^GSPC');
   const activeTicker = isUsSector ? selectedUsTicker : '^TWII';
 
   // 績效測量工具相關 States
@@ -133,6 +143,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           benchAbsChanges['台股大盤'] = (endPt.marketPrice || 0) - (startPt.marketPrice || 0);
         }
         
+        if (isUsSector && comparisonTicker !== null) {
+          const selectedLabel = US_BENCHMARKS.find(item => item.ticker === comparisonTicker)?.label;
+          Object.keys(benchChanges).forEach(label => { if (label !== selectedLabel) { delete benchChanges[label]; delete benchAbsChanges[label]; } });
+        }
+
         const t1 = new Date(start).getTime();
         const t2 = new Date(end).getTime();
         const days = Math.round((t2 - t1) / (1000 * 60 * 60 * 24));
@@ -193,6 +208,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     }).sort((a, b) => b.value - a.value);
   }, [appData.activeHoldings, marketData.prices, weeklyPrices]);
 
+  // 圖形及文字共用下方持倉卡的股數 × 現價，不使用上方含息總計。
+  const pieTotalValue = pieData.reduce((sum, item) => sum + item.value, 0);
+
   const categoryData = useMemo(() => {
     const holdings = appData.activeHoldings || [];
     const categories: Record<string, number> = {};
@@ -228,7 +246,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       {/* 1. Header & Stats */}
       <div className="space-y-6 px-1">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black flex items-center gap-3">
+          <h2 className="font-black flex items-center gap-3 text-2xl">
             <LayoutDashboard className="text-[var(--accent)]" /> 未實現損益
             {isUsSector && (
               <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
@@ -251,7 +269,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </div>
           <div className="stat-box border-[var(--accent)]/50 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] shadow-[0_0_20px_var(--accent-glow)] group transition-all">
             <div className="stat-label flex items-center gap-2 select-none">
-              <PieChartIcon size={12} className="text-[var(--accent)]" /> 當前總市值 (含息)
+              <PieChartIcon size={12} className="text-[var(--accent)]" /> {isUsSector ? '當前總市值（含息，固定匯率）' : '當前總市值 (含息)'}
             </div>
             <div className="stat-value text-[var(--accent)] text-2xl font-mono">
               {isUsSector
@@ -261,19 +279,19 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </div>
           {(() => {
             const displayPL = isUsSector ? (stats.unrealizedPLTwd || 0) : stats.unrealizedPL;
-            // 報酬率百分比一律用美元本位 (stats.unrealizedRoi) 以防固定匯率31扭曲真實報酬率
-            const displayRoi = isUsSector ? stats.unrealizedRoi : stats.unrealizedRoi;
+            // 上方以台幣呈現；百分比須使用同一台幣損益與剩餘成本。
+            const displayRoi = isUsSector ? inclusiveUnrealizedRoi(displayPL, stats.totalInvestedTwd ?? 0) : stats.unrealizedRoi;
             return (
               <div className={cn("stat-box transition-all duration-500 group", displayPL >= 0 ? "border-[var(--success)]/50 shadow-[0_0_15px_rgba(255,69,58,0.1)]" : "border-[var(--danger)]/50 shadow-[0_0_15px_rgba(50,215,75,0.1)]")}>
                 <div className="stat-label flex items-center gap-2 select-none">
-                  <Activity size={12} className={displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"} /> 帳面總損益 (含息)
+                  <Activity size={12} className={displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"} /> {isUsSector ? '帳面總損益（含息，固定匯率）' : '帳面總損益 (含息)'}
                 </div>
                 <div className={cn("stat-value text-2xl font-mono", displayPL >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                   {displayPL >= 0 ? '+' : ''}
                   {isUsSector 
                     ? `NT$${Math.round(displayPL).toLocaleString('zh-TW')}` 
                     : `$${displayPL.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                  <span className="text-xs ml-2 opacity-60 font-sans tracking-normal">({displayRoi >= 0 ? '+' : ''}{displayRoi.toFixed(2)}%)</span>
+                  <span className="ml-2 opacity-60 font-sans tracking-normal text-xs">({displayRoi === null ? '—' : `${displayRoi >= 0 ? '+' : ''}${displayRoi.toFixed(2)}%`})</span>
                 </div>
               </div>
             );
@@ -286,7 +304,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         {[0, 1, 2].map(i => (
           <button
             key={i}
-            onClick={() => setPage(i)}
+            onClick={() => { setPage(i); if (i !== 2) { setComparisonTicker(null); setViewMode('ratio'); setMeasurementData(null); setRefAreaLeft(null); setRefAreaRight(null); } }}
+            aria-label={['持倉明細', '歷史倉位', '績效對比'][i]}
+            aria-pressed={page === i}
             className="group py-4 px-3 outline-none cursor-pointer"
           >
             <div className={cn(
@@ -309,7 +329,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           {/* Page 1: Allocation & Holdings */}
           <div className="w-full shrink-0 px-1 space-y-10">
             <div className="elegant-card p-6 relative">
-              <h3 className="text-[10px] font-black opacity-60 flex items-center gap-2 mb-8 uppercase tracking-[0.2em] text-[var(--accent)]">
+              <h3 className="font-black opacity-60 flex items-center gap-2 mb-8 uppercase tracking-[0.2em] text-[var(--accent)] text-[10px]">
                 <PieChartIcon size={12} /> 資產配置比例
               </h3>
               <div className="flex flex-col md:flex-row items-center gap-8">
@@ -338,8 +358,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                               <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-3 rounded-xl shadow-2xl backdrop-blur-md">
                                 <div className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest border-b border-[var(--border)] pb-2 mb-2">{data.name}</div>
                                 <div className="flex justify-between gap-6">
-                                  <span className="text-[11px] font-bold text-[var(--text-dim)]">市值</span>
-                                  <span className="text-xs font-mono font-black text-[var(--text-main)]">${data.value.toLocaleString()}</span>
+                                  <span className="font-bold text-[var(--text-dim)] text-[11px]">市值</span>
+                                  <span className="font-mono font-black text-[var(--text-main)] text-xs">${data.value.toLocaleString()}</span>
                                 </div>
                               </div>
                             );
@@ -357,8 +377,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                         <span className="text-[11px] font-bold text-[var(--text-main)] truncate w-20">{item.name}</span>
                       </div>
-                      <span className="text-[10px] font-mono font-black text-[var(--accent)]">
-                        {((item.value / (stats.totalMarketValue || 1)) * 100).toFixed(1)}%
+                      <span className="font-mono font-black text-[var(--accent)] text-[10px]">
+                        {((item.value / (pieTotalValue || 1)) * 100).toFixed(1)}%
                       </span>
                     </div>
                   ))}
@@ -367,7 +387,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
 
             <div className="space-y-6">
-              <h3 className="text-[10px] font-black opacity-60 flex items-center gap-2 uppercase tracking-[0.2em]">
+              <h3 className="font-black opacity-60 flex items-center gap-2 uppercase tracking-[0.2em] text-[10px]">
                 <Edit2 size={12} /> 當前持倉明細
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -401,7 +421,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                             <div className="text-2xl font-mono font-black text-[var(--accent)] leading-none">
                               {h.currentShares.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-dim)] mt-1 opacity-60">
+                            <div className="font-black uppercase tracking-widest text-[var(--text-dim)] mt-1 opacity-60 text-[10px]">
                               持有股數
                             </div>
                           </div>
@@ -409,7 +429,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                         {(() => {
                           const isTwd = isUsSector && displayCurrency === 'TWD';
-                          const twdCost = (h as any).totalInvestedTwd || 0;
+                          const twdCost = (h as any).totalInvestedTwd ?? (h.totalInvested * 31);
+                          const twdAvgCost = h.currentShares > 0 ? twdCost / h.currentShares : 0;
                           const twdValue = curPrice * h.currentShares * 31;
                           const twdHpl = twdValue - twdCost;
 
@@ -420,18 +441,18 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                             : `$${(curPrice * h.currentShares).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
                           const displayCostStr = isTwd
-                            ? `NT$${Math.round((h as any).avgCostTwd || 0).toLocaleString('zh-TW')}`
+                            ? `NT$${Math.round(twdAvgCost).toLocaleString('zh-TW')}`
                             : `$${h.avgCost.toFixed(2)}`;
 
                           const currentHpl = isTwd ? twdHpl : hpl;
-                          // 報酬率百分比一律用美元本位 (hroi) 以防匯差扭曲報酬率
+                          // 依使用者選擇，個股卡維持美元價差報酬率，切台幣時明確標示。
                           const currentHroi = hroi;
 
                           return (
                             <div className="grid grid-cols-2 gap-y-6 gap-x-4 pt-6 border-t border-[var(--border)]/50">
                               <div className="flex flex-col select-none">
-                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
-                                  最新收盤價
+                                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2 text-[10px]">
+                                  最新收盤價{isUsSector && '（USD）'}
                                 </span>
                                 <span className="text-lg font-mono font-black text-[var(--text-main)]">{displayPriceStr}</span>
                               </div>
@@ -439,8 +460,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
                                 className={cn("flex flex-col text-right select-none", isUsSector && "cursor-pointer hover:opacity-80")}
                               >
-                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
-                                  總市值 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2 text-[10px]">
+                                  {isUsSector ? (isTwd ? '總市值（固定匯率）' : '總市值（USD）') : '總市值'} {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
                                 </span>
                                 <span className="text-lg font-mono font-black text-[var(--accent)]">{displayValueStr}</span>
                               </div>
@@ -448,8 +469,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
                                 className={cn("flex flex-col select-none", isUsSector && "cursor-pointer hover:opacity-80")}
                               >
-                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
-                                  平均成本 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2 text-[10px]">
+                                  {isUsSector && !isTwd ? '平均成本（USD）' : '平均成本'} {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
                                 </span>
                                 <span className="text-base font-mono font-bold text-[var(--text-dim)]">{displayCostStr}</span>
                               </div>
@@ -457,8 +478,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 onClick={() => isUsSector && setDisplayCurrency(prev => prev === 'USD' ? 'TWD' : 'USD')}
                                 className={cn("flex flex-col text-right select-none", isUsSector && "cursor-pointer hover:opacity-80")}
                               >
-                                <span className="text-[10px] text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2">
-                                  帳面損益 / 報酬率 {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
+                                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest opacity-60 mb-2 text-[10px]">
+                                  {isUsSector ? (isTwd ? '帳面損益（固定匯率）/ USD報酬率' : '帳面損益（USD）/ USD報酬率') : '帳面損益 / 報酬率'} {isUsSector && <span className="text-[8px] text-blue-400">⇄</span>}
                                 </span>
                                 <div className={cn("flex flex-col items-end", currentHpl >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                   <span className="text-lg font-mono font-black leading-none">
@@ -467,7 +488,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                       ? `NT$${Math.round(currentHpl).toLocaleString('zh-TW')}`
                                       : currentHpl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                   </span>
-                                  <span className="text-xs font-black mt-1">{currentHroi >= 0 ? '▲' : '▼'} {Math.abs(currentHroi).toFixed(2)}%</span>
+                                  <span className={cn("font-black mt-1 text-[10px]", currentHroi >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>{currentHroi >= 0 ? '▲' : '▼'} {Math.abs(currentHroi).toFixed(2)}%{isUsSector && '（USD）'}</span>
                                 </div>
                               </div>
                             </div>
@@ -484,7 +505,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           <div className="w-full shrink-0 px-1 space-y-10">
             <div className="elegant-card p-0 overflow-hidden relative border-[var(--border)] shadow-2xl">
               <div className="p-5 pb-0 flex items-center justify-between">
-                <h3 className="text-[11px] font-black opacity-80 flex items-center gap-2 uppercase tracking-[0.2em] text-[var(--text-main)]">
+                <h3 className="font-black opacity-80 flex items-center gap-2 uppercase tracking-[0.2em] text-[var(--text-main)] text-[11px]">
                   <div className="p-1.5 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
                     <Activity size={14} />
                   </div>
@@ -492,17 +513,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </h3>
               </div>
               <div className="h-[340px] relative px-2">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" onResize={(width) => setDateAxisWidth(width)}>
                   <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
-                    <XAxis
+                    <XAxis ticks={getEvenDateTicks(chartData.map(point => point.name), dateAxisWidth)} interval={0} minTickGap={0} padding={{ left: 12, right: 12 }}
                       dataKey="name"
                       stroke="var(--text-dim)"
                       fontSize={9}
                       axisLine={false}
                       tickLine={false}
                       tickMargin={12}
-                      minTickGap={40}
                       tickFormatter={(str) => str.split('-').slice(1).join('/')}
                     />
                     <YAxis
@@ -552,17 +572,17 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
                                       <span className="text-[11px] font-bold text-[var(--text-dim)]">{item.label}</span>
                                     </div>
-                                    <span className="text-xs font-mono font-black text-[var(--text-main)]">${item.value.toLocaleString()}</span>
+                                    <span className="font-mono font-black text-[var(--text-main)] text-xs">${item.value.toLocaleString()}</span>
                                   </div>
                                 ))}
                                 <div className="flex items-center justify-between gap-10 border-t border-[var(--border)] pt-2 mt-2">
                                   <div className="flex items-center gap-2">
                                     <div className={cn("w-1.5 h-1.5 rounded-full", originalPoint.profit >= 0 ? "bg-[var(--success)]" : "bg-[var(--danger)]")} />
-                                    <span className="text-[11px] font-bold text-[var(--text-dim)]">盈虧</span>
+                                    <span className="font-bold text-[var(--text-dim)] text-[11px]">盈虧</span>
                                   </div>
                                   <span className={cn("text-xs font-mono font-black", originalPoint.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                     {originalPoint.profit >= 0 ? '+' : ''}{originalPoint.profit.toLocaleString()}
-                                    <span className="text-[10px] ml-1.5 opacity-80 font-sans tracking-normal">
+                                    <span className="ml-1.5 opacity-80 font-sans tracking-normal text-xs">
                                       ({roi >= 0 ? '+' : ''}{roi.toFixed(2)}%)
                                     </span>
                                   </span>
@@ -617,15 +637,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             <div className="space-y-4">
               <div className="flex items-center gap-3 px-2">
                 <Layers className="text-[var(--accent)]" size={18} />
-                <h3 className="text-sm font-black uppercase tracking-widest text-[var(--text-dim)]">歷史週倉位矩陣</h3>
+                <h3 className="font-black uppercase tracking-widest text-[var(--text-dim)] text-sm">歷史週倉位矩陣</h3>
               </div>
+              {isUsSector && <p className="px-2 text-[10px] text-[var(--text-dim)]">NT$；固定匯率31；投入本金已扣未實現股息</p>}
               <div className="elegant-card p-0 overflow-hidden border-[var(--border)] shadow-2xl bg-opacity-50 backdrop-blur-sm">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left min-w-max border-collapse">
                     <thead>
                       <tr className="bg-[var(--bg-tertiary)] text-[10px] font-black uppercase tracking-widest text-[var(--text-dim)] border-b border-[var(--border)]">
                         <th className="px-6 py-5 sticky left-0 bg-[var(--bg-tertiary)] z-20 shadow-[2px_0_10px_rgba(0,0,0,0.2)]">日期</th>
-                        <th className="px-6 py-5 text-center text-[var(--accent)] min-w-[100px] md:min-w-[120px] bg-[var(--accent)]/5">市值</th>
+                        <th className="px-6 py-5 text-center text-[var(--accent)] min-w-[100px] md:min-w-[120px] bg-[var(--accent)]/5">{isUsSector ? '市值（固定匯率）' : '市值'}</th>
                         <th className="px-6 py-5 text-center text-[var(--danger)] min-w-[100px] md:min-w-[120px] bg-[var(--danger)]/5">投入本金</th>
                         <th className="px-6 py-5 text-center text-[var(--success)] min-w-[100px] md:min-w-[140px] bg-[var(--success)]/5">帳面損益</th>
                         {/* Dynamic ticker columns - Fix: Use synced allTickers */}
@@ -638,12 +659,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           <td className="px-6 py-5 font-mono text-[11px] font-bold sticky left-0 bg-[var(--bg-primary)] group-hover:bg-[var(--bg-tertiary)] z-10 border-r border-[var(--border)]/30">
                             {row.name.replace(/-/g, '/')}
                           </td>
-                          <td className="px-6 py-5 font-mono text-[11px] text-right text-[var(--accent)] font-black">${row.value.toLocaleString()}</td>
-                          <td className="px-6 py-5 font-mono text-[11px] text-right text-[var(--danger)] opacity-80">${row.cost.toLocaleString()}</td>
+                          <td className="px-6 py-5 font-mono text-right text-[var(--accent)] font-black text-[11px]">{isUsSector ? 'NT$' : '$'}{row.value.toLocaleString()}</td>
+                          <td className="px-6 py-5 font-mono text-right text-[var(--danger)] text-[11px] opacity-80">{isUsSector ? 'NT$' : '$'}{row.cost.toLocaleString()}</td>
                           <td className={cn("px-6 py-5 font-mono text-xs font-black text-right", row.profit >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                             <div className="flex flex-col items-end">
-                              <span>{row.profit >= 0 ? '+' : ''}{row.profit.toLocaleString()}</span>
-                              <span className="text-[9px] opacity-60 font-sans tracking-normal font-normal">
+                              <span>{row.profit >= 0 ? '+' : ''}{isUsSector ? 'NT$' : ''}{row.profit.toLocaleString()}</span>
+                              <span className="opacity-60 font-sans tracking-normal font-normal text-[10px]">
                                 {((row.profit / (row.cost || 1)) * 100).toFixed(1)}%
                               </span>
                             </div>
@@ -651,7 +672,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           {/* Dynamic ticker values - Fix: Use synced allTickers */}
                           {allTickers.map(ticker => (
                             <td key={ticker} className="px-6 py-5 font-mono text-[11px] text-right text-[var(--text-main)] opacity-70 border-l border-[var(--border)]/10">
-                              {row.breakdown?.[ticker] > 0 ? `$${row.breakdown[ticker].toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '-'}
+                              {row.breakdown?.[ticker] > 0 ? `${isUsSector ? 'NT$' : '$'}${row.breakdown[ticker].toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '-'}
                             </td>
                           ))}
                         </tr>
@@ -666,20 +687,30 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           {/* Page 3: ROI Benchmark Redesigned */}
           <div className="w-full shrink-0 px-0.5 space-y-4 md:space-y-8">
             {/* Header Stats */}
+            {isUsSector && (
+              <div className="flex flex-wrap items-center gap-2 px-1">
+                {US_BENCHMARKS.map(benchmark => (
+                  <button key={benchmark.ticker} onClick={() => { setComparisonTicker(benchmark.ticker); setMeasurementData(null); setRefAreaLeft(null); setRefAreaRight(null); }} aria-pressed={comparisonTicker === null || comparisonTicker === benchmark.ticker}
+                    className={cn("px-3 py-1.5 rounded-lg border border-[var(--border)] text-[10px] font-bold transition-colors", (comparisonTicker === null || comparisonTicker === benchmark.ticker) ? "bg-[var(--accent)] text-[var(--bg-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-dim)]")}>
+                    {benchmark.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div className="elegant-card p-3 md:p-5 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] border-[var(--accent)]/30">
-                <span className="text-[8px] md:text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1">累積超額報酬 (Alpha)</span>
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1 text-[8px] md:text-[9px]">累積超額報酬 (Alpha){isUsSector && ` · ${benchmarkSummary.label}`}</span>
                 <p className={cn(
-                  "text-lg md:text-2xl font-mono font-black",
-                  (chartData[chartData.length - 1]?.portfolioRoi - chartData[chartData.length - 1]?.marketRoi) >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"
+                  "font-mono font-black text-lg md:text-2xl",
+                  benchmarkSummary.alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"
                 )}>
-                  {((chartData[chartData.length - 1]?.portfolioRoi || 0) - (chartData[chartData.length - 1]?.marketRoi || 0)).toFixed(2)}%
+                  {benchmarkSummary.alpha.toFixed(2)}%
                 </p>
               </div>
               <div className="elegant-card p-3 md:p-5 bg-gradient-to-br from-[var(--bg-tertiary)] to-[var(--bg-secondary)] border-[var(--border)]">
-                <span className="text-[8px] md:text-[9px] text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1">投資組合勝率</span>
-                <p className="text-lg md:text-2xl font-mono font-black text-[var(--text-main)]">
-                  {((chartData.filter(d => d.portfolioRoi > d.marketRoi).length / (chartData.length || 1)) * 100).toFixed(0)}%
+                <span className="text-[var(--text-dim)] font-black uppercase tracking-widest block mb-1 text-[8px] md:text-[9px]">投資組合勝率{isUsSector && ` · ${benchmarkSummary.label}`}</span>
+                <p className="font-mono font-black text-[var(--text-main)] text-lg md:text-2xl">
+                  {benchmarkSummary.winRate.toFixed(0)}%
                 </p>
               </div>
             </div>
@@ -690,7 +721,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     <div className="p-1.5 rounded-lg bg-[var(--accent)] text-[var(--bg-primary)]">
                       <Activity size={14} />
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-[var(--text-main)]">
+                    <h3 className="font-black uppercase tracking-widest text-[var(--text-main)] text-sm">
                       績效對比
                     </h3>
                   </div>
@@ -703,7 +734,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   <button 
                     onClick={() => setViewMode('ratio')}
                     className={cn(
-                      "px-3 md:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                      "rounded-lg font-black uppercase tracking-widest transition-all px-3 md:px-4 py-1.5 text-[10px]",
                       viewMode === 'ratio' ? "bg-[var(--accent)] text-[var(--bg-primary)] shadow-lg" : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
                     )}
                   >
@@ -712,7 +743,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   <button 
                     onClick={() => setViewMode('absolute')}
                     className={cn(
-                      "px-3 md:px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                      "rounded-lg font-black uppercase tracking-widest transition-all px-3 md:px-4 py-1.5 text-[10px]",
                       viewMode === 'absolute' ? "bg-[var(--accent)] text-[var(--bg-primary)] shadow-lg" : "text-[var(--text-dim)] hover:text-[var(--text-main)]"
                     )}
                   >
@@ -722,7 +753,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </div>
               
               <div className="h-[320px] md:h-[420px] relative px-1 md:px-2 pb-4" style={{ touchAction: 'pan-y' }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" onResize={(width) => setDateAxisWidth(width)}>
                   <ComposedChart 
                     data={chartData} 
                     margin={{ top: 30, right: 10, left: 15, bottom: 20 }}
@@ -760,14 +791,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.2} />
-                    <XAxis 
+                    <XAxis ticks={getEvenDateTicks(chartData.map(point => point.name), dateAxisWidth)} interval={0} minTickGap={0} padding={{ left: 12, right: 12 }} 
                       dataKey="name" 
                       stroke="var(--text-dim)" 
                       fontSize={8} 
                       axisLine={false} 
                       tickLine={false} 
                       tickMargin={15}
-                      minTickGap={40}
                       tickFormatter={(str) => str.split('-').slice(1).join('/')}
                     />
                     <YAxis 
@@ -855,13 +885,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                   <div className="border-t border-[var(--border)] pt-2 mt-2 space-y-1.5 opacity-80">
                                     <div className="flex items-center justify-between text-[10px]">
                                       <span className="text-[var(--text-dim)]">├ 未實現盈虧</span>
-                                      <span className={cn("font-mono font-bold", (originalPoint.profit || 0) >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                                      <span className={cn("font-mono font-bold text-xs", (originalPoint.profit || 0) >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                         {(originalPoint.profit || 0) >= 0 ? '+' : '-'}${Math.abs(originalPoint.profit || 0).toLocaleString()}
                                       </span>
                                     </div>
                                     <div className="flex items-center justify-between text-[10px]">
                                       <span className="text-[var(--text-dim)]">└ 已實現盈虧</span>
-                                      <span className={cn("font-mono font-bold", (originalPoint.realizedProfit || 0) >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
+                                      <span className={cn("font-mono font-bold text-xs", (originalPoint.realizedProfit || 0) >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]")}>
                                         {(originalPoint.realizedProfit || 0) >= 0 ? '+' : '-'}${Math.abs(originalPoint.realizedProfit || 0).toLocaleString()}
                                       </span>
                                     </div>
@@ -870,13 +900,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                                 {viewMode === 'ratio' && payload.length >= 2 && (
                                   <div className={cn("border-t border-[var(--border)] pt-3 mt-1 space-y-1.5", isMobile && "pt-2 mt-1 space-y-1")}>
-                                    <span className="text-[10px] font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1.5">超額收益 (Alpha)</span>
+                                    <span className="font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1.5 text-[10px]">超額收益 (Alpha)</span>
                                     {payload.slice(1).map((item: any, idx: number) => {
                                       const alpha = (payload[0].value || 0) - (item.value || 0);
                                       return (
                                         <div key={idx} className={cn("flex items-center justify-between gap-12", isMobile && "gap-6")}>
-                                          <span className="text-[10px] font-bold text-[var(--text-dim)]">vs {item.name}</span>
-                                          <span className={cn("text-xs font-mono font-black", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                          <span className="font-bold text-[var(--text-dim)] text-[10px]">vs {item.name}</span>
+                                          <span className={cn("font-mono font-black text-[10px]", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                             {alpha >= 0 ? '+' : ''}{alpha.toFixed(2)}%
                                           </span>
                                         </div>
@@ -908,7 +938,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     <Line 
                       yAxisId="left"
                       type="monotone" 
-                      name={viewMode === 'ratio' ? "個人帳戶" : "累計損益"} 
+                      name={viewMode === 'ratio' ? "個人帳戶" : (isUsSector ? "累計損益（NT$）" : "累計損益")}
                       dataKey={viewMode === 'ratio' ? "portfolioRoi" : "totalPL"} 
                       stroke="var(--accent)" 
                       strokeWidth={4} 
@@ -933,7 +963,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     )}
                     {isUsSector && viewMode === 'ratio' && (
                       <>
-                        <Line 
+                        {(comparisonTicker === null || comparisonTicker === '^GSPC') && (<Line 
                           yAxisId="left"
                           type="monotone" 
                           name="標普 500" 
@@ -945,8 +975,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           activeDot={{ r: 4, strokeWidth: 0, fill: '#10b981' }} 
                           opacity={0.95}
                           animationDuration={1500}
-                        />
-                        <Line 
+                        />)}
+                        {(comparisonTicker === null || comparisonTicker === '^IXIC') && (<Line 
                           yAxisId="left"
                           type="monotone" 
                           name="那斯達克" 
@@ -958,8 +988,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           activeDot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }} 
                           opacity={0.95}
                           animationDuration={1500}
-                        />
-                        <Line 
+                        />)}
+                        {(comparisonTicker === null || comparisonTicker === '^DJI') && (<Line 
                           yAxisId="left"
                           type="monotone" 
                           name="道瓊工業" 
@@ -971,7 +1001,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                           activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }} 
                           opacity={0.95}
                           animationDuration={1500}
-                        />
+                        />)}
                       </>
                     )}
                     {refAreaLeft && refAreaRight && React.createElement(ReferenceArea as any, {
@@ -1016,20 +1046,20 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     <div className="grid grid-cols-2 gap-3 text-center">
                       {/* 左邊：個人績效 */}
                       <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-[var(--bg-tertiary)]/40 border border-[var(--border)]/30">
-                        <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">個人帳戶</span>
+                        <span className="text-[var(--text-dim)] font-black uppercase tracking-widest mb-1 text-[8px]">{isUsSector && viewMode === 'absolute' ? '個人帳戶（NT$）' : '個人帳戶'}</span>
                         <div className="flex items-center gap-0.5 whitespace-nowrap">
                           {viewMode === 'ratio' ? (
                             <>
                               <TrendingUp size={12} className={measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
-                              <span className={cn("font-mono font-black text-[13px] md:text-base whitespace-nowrap", measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                              <span className={cn("font-mono font-black whitespace-nowrap text-[10px]", measurementData.portfolioChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                 {measurementData.portfolioChange >= 0 ? '+' : ''}{measurementData.portfolioChange.toFixed(2)}%
                               </span>
                             </>
                           ) : (
                             <>
                               <TrendingUp size={12} className={measurementData.portfolioAbsChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
-                              <span className={cn("font-mono font-black text-[13px] md:text-base whitespace-nowrap", measurementData.portfolioAbsChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
-                                {measurementData.portfolioAbsChange >= 0 ? '+' : '-'}${Math.abs(measurementData.portfolioAbsChange).toLocaleString()}
+                              <span className={cn("font-mono font-black whitespace-nowrap text-xs", measurementData.portfolioAbsChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                {measurementData.portfolioAbsChange >= 0 ? '+' : '-'}{isUsSector ? 'NT$' : '$'}{Math.abs(measurementData.portfolioAbsChange).toLocaleString()}
                               </span>
                             </>
                           )}
@@ -1039,7 +1069,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       {/* 右邊：基準大盤 */}
                       <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-[var(--bg-tertiary)]/40 border border-[var(--border)]/30">
                         <span className="text-[8px] text-[var(--text-dim)] font-black uppercase tracking-widest mb-1">
-                          {isUsSector ? '對比基準' : '台股大盤'}
+                          {isUsSector ? (viewMode === 'absolute' ? '指數變化（點）' : '對比基準') : '台股大盤'}
                         </span>
                         {!isUsSector ? (
                           <div className="flex items-center gap-0.5 whitespace-nowrap">
@@ -1049,14 +1079,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                               return viewMode === 'ratio' ? (
                                 <>
                                   <TrendingUp size={12} className={twChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
-                                  <span className={cn("font-mono font-black text-[13px] md:text-base whitespace-nowrap", twChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                  <span className={cn("font-mono font-black whitespace-nowrap text-[10px]", twChange >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                     {twChange >= 0 ? '+' : ''}{twChange.toFixed(2)}%
                                   </span>
                                 </>
                               ) : (
                                 <>
                                   <TrendingUp size={12} className={twChangeAbs >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]"} />
-                                  <span className={cn("font-mono font-black text-[13px] md:text-base whitespace-nowrap", twChangeAbs >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                  <span className={cn("font-mono font-black whitespace-nowrap text-[13px] md:text-base", twChangeAbs >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                     {twChangeAbs >= 0 ? '+' : ''}{twChangeAbs.toFixed(2)} 點
                                   </span>
                                 </>
@@ -1085,12 +1115,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     {/* 超額收益 Alpha 計算顯示 */}
                     {viewMode === 'ratio' && Object.entries(measurementData.benchChanges).length === 1 && (
                       <div className="mt-3 pt-2.5 border-t border-[var(--border)]/60 flex items-center justify-between text-[10px]">
-                        <span className="font-black text-[var(--text-dim)] uppercase tracking-wider">超額收益 (Alpha)</span>
+                        <span className="font-black text-[var(--text-dim)] uppercase tracking-wider text-[10px]">超額收益 (Alpha)</span>
                         {(() => {
                           const firstBench = Object.entries(measurementData.benchChanges as Record<string, number>)[0];
                           const alpha = measurementData.portfolioChange - firstBench[1];
                           return (
-                            <span className={cn("font-mono font-black", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                            <span className={cn("font-mono font-black text-[10px]", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                               {alpha >= 0 ? '+' : ''}{alpha.toFixed(2)}%
                             </span>
                           );
@@ -1100,14 +1130,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                     {viewMode === 'ratio' && Object.entries(measurementData.benchChanges).length > 1 && (
                       <div className="mt-3 pt-2 border-t border-[var(--border)]/60 text-[8px] space-y-1">
-                        <span className="font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1">超額收益 (Alpha)</span>
+                        <span className="font-black text-[var(--text-dim)] uppercase tracking-widest block mb-1 text-[10px]">超額收益 (Alpha)</span>
                         <div className="grid grid-cols-3 gap-1 text-center">
                           {Object.entries(measurementData.benchChanges as Record<string, number>).map(([name, val]) => {
                             const alpha = measurementData.portfolioChange - val;
                             return (
                               <div key={name} className="flex flex-col p-1 rounded bg-[var(--bg-tertiary)]/20 border border-[var(--border)]/20">
                                 <span className="text-[8px] text-[var(--text-dim)] font-bold">{name.substring(0, 2)}</span>
-                                <span className={cn("font-mono font-black text-9px", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
+                                <span className={cn("font-mono font-black text-9px text-[10px]", alpha >= 0 ? "text-[var(--accent)]" : "text-[var(--danger)]")}>
                                   {alpha >= 0 ? '+' : ''}{alpha.toFixed(1)}%
                                 </span>
                               </div>
@@ -1186,7 +1216,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     setMPrice('');
                     alert(`${activeTicker === '^TWII' ? '台股大盤' : activeTicker === '^GSPC' ? '標普 500' : activeTicker === '^IXIC' ? '那斯達克' : '道瓊工業'} 數據已成功記錄！`);
                   }}
-                  className="bg-[var(--accent)] text-[var(--bg-primary)] h-[42px] rounded-lg text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg w-full flex items-center justify-center cursor-pointer"
+                  className="bg-[var(--accent)] text-[var(--bg-primary)] rounded-lg font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg w-full flex items-center justify-center cursor-pointer h-[42px] text-xs"
                 >
                   儲存
                 </button>
@@ -1194,7 +1224,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
               {/* Benchmark History List */}
               <div className="mt-8 border-t border-[var(--border)] pt-6">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-4 flex items-center gap-2">
+                <h4 className="font-black uppercase tracking-widest text-[var(--text-dim)] mb-4 flex items-center gap-2 text-[10px]">
                    <Activity size={12} /> {activeTicker === '^TWII' ? '台股大盤' : activeTicker === '^GSPC' ? '標普 500' : activeTicker === '^IXIC' ? '那斯達克' : '道瓊工業'} 歷史紀錄清單
                 </h4>
                 <div className="w-full">
@@ -1221,7 +1251,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 setMPrice(p.price.toString());
                                 document.getElementById('market-bench-input')?.scrollIntoView({ behavior: 'smooth' });
                               }}
-                              className="p-1.5 text-[var(--text-dim)] hover:text-[var(--accent)] transition-all"
+                              className="text-[var(--text-dim)] hover:text-[var(--accent)] transition-all p-1.5"
                               title="編輯此筆紀錄"
                             >
                               <Edit2 size={12} />
@@ -1232,7 +1262,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                   setWeeklyPrices(prev => prev.filter(x => !(x.date === p.date && x.ticker === activeTicker)));
                                 }
                               }}
-                              className="p-1.5 text-[var(--text-dim)] hover:text-[var(--danger)] transition-all"
+                              className="text-[var(--text-dim)] hover:text-[var(--danger)] transition-all p-1.5"
                               title="刪除此筆紀錄"
                             >
                               <Trash2 size={12} />
@@ -1242,7 +1272,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       ))}
                       {weeklyPrices.filter(p => p.ticker === activeTicker).length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-2 py-8 text-center text-[10px] text-[var(--text-dim)] italic">尚無大盤數據</td>
+                          <td colSpan={3} className="px-2 py-8 text-center text-[var(--text-dim)] italic text-[10px]">尚無大盤數據</td>
                         </tr>
                       )}
                     </tbody>

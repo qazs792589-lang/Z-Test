@@ -57,7 +57,7 @@ const DraggablePill: React.FC<DraggablePillProps> = ({
         </div>
       )}
       <span className="tracking-tight">{name}</span>
-      {isZero && <span className="opacity-60 text-[9px] font-bold">(已清倉)</span>}
+      {isZero && <span className="opacity-60 font-bold text-[9px]">(已清倉)</span>}
       {isEditing && (
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(ticker); }}

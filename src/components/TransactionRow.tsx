@@ -1,12 +1,16 @@
+import { TransactionOrderButtons } from './TransactionOrderButtons';
 import React from 'react';
 import { motion } from 'motion/react';
 import { Edit2, Check, Trash2, StickyNote } from 'lucide-react';
 import { Transaction } from '../types';
 import { cn } from '../lib/utils';
-import { isTxRealized } from '../lib/txUtils';
+import { isTxRealized, getSellNetAmounts, getDividendNetAmounts } from '../lib/txUtils';
+import { usesEstimatedTwdAmount } from '../lib/usDisplay';
 
 interface TransactionRowProps {
   tx: Transaction;
+  transactions?: Transaction[];
+  onMove?: (id: string, step: -1 | 1) => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (id: string) => void;
   onToggleRealized: (id: string) => void;
@@ -14,11 +18,15 @@ interface TransactionRowProps {
 
 export const TransactionRow: React.FC<TransactionRowProps> = ({
   tx,
+  transactions,
+  onMove,
   onEdit,
   onDelete,
   onToggleRealized
 }) => {
+  const isCashOutReceipt = (tx.direction === 'SELL' && getSellNetAmounts(tx).original < 0) || (tx.direction === 'DIVIDEND' && getDividendNetAmounts(tx).original < 0);
   const isUS = tx.currency === 'USD';
+  const missingTwdAmount = usesEstimatedTwdAmount(tx);
   const dirColor =
     tx.direction === 'BUY' ? 'text-[var(--danger)]' :
     tx.direction === 'SELL' ? 'text-[var(--success)]' :
@@ -57,65 +65,74 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
             {dirLabel}
           </span>
           {isUS && (
-            <span className="text-[6px] font-black text-blue-400 bg-blue-400/10 px-1 py-0.5 rounded text-center w-full leading-tight">US</span>
+            <span className="text-[8px] font-black text-blue-400 bg-blue-400/10 px-1 py-0.5 rounded text-center w-full leading-tight">US</span>
           )}
           {isTxRealized(tx) && (
-            <span className="text-[6px] font-bold text-[var(--text-dim)] opacity-50 text-center w-full leading-tight">已實現</span>
+            <span className="text-[8px] font-bold text-[var(--text-dim)] opacity-50 text-center w-full leading-tight">已實現</span>
           )}
         </div>
 
         {/* 中：主要內容 */}
         <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
           {/* 第一行：日期 + 操作按鈕 */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <span className="text-[9px] font-mono font-bold text-[var(--text-dim)] opacity-70 leading-none">{tx.date}</span>
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
-              className="p-1 text-[var(--accent)] hover:bg-[var(--bg-primary)] rounded transition-all"
+              className="p-1.5 text-[var(--accent)] hover:bg-[var(--bg-primary)] rounded transition-all"
               title="編輯"
             >
-              <Edit2 size={9} />
+              <Edit2 size={10} />
             </button>
             {tx.direction === 'DIVIDEND' && (
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleRealized(tx.id); }}
                 className={cn(
-                  "w-4 h-4 flex items-center justify-center rounded-full transition-all border",
+                  "w-5 h-5 flex items-center justify-center rounded-full transition-all border",
                   isTxRealized(tx)
                     ? "bg-[var(--text-dim)] text-[var(--bg-primary)] border-transparent"
                     : "bg-transparent text-[var(--text-dim)] border-[var(--border)] opacity-40 hover:opacity-100"
                 )}
                 title="標記已實現"
               >
-                <Check size={8} strokeWidth={4} />
+                <Check size={10} strokeWidth={4} />
               </button>
             )}
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(tx.id); }}
-              className="p-1 text-[var(--danger)] hover:bg-[var(--bg-primary)] rounded transition-all opacity-0 group-hover:opacity-100 md:opacity-0"
+              className="p-1.5 text-[var(--danger)] hover:bg-[var(--bg-primary)] rounded transition-all opacity-100 md:opacity-0 group-hover:opacity-100"
               title="刪除"
             >
-              <Trash2 size={9} />
+              <Trash2 size={10} />
             </button>
+            <TransactionOrderButtons tx={tx} transactions={transactions} onMove={onMove} />
           </div>
           {/* 第二行：數量 | 單價 */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-mono font-black text-[var(--text-main)] leading-none">
+            <span className="text-[10px] md:text-xs font-mono font-black text-[var(--text-main)] leading-none">
               {tx.quantity.toLocaleString(undefined, { maximumFractionDigits: isUS ? 4 : 0 })} 股
             </span>
             <span className="opacity-20 text-[10px]">|</span>
-            <span className="text-[10px] font-mono font-black text-[var(--text-main)] leading-none">
+            <span className="text-[10px] md:text-xs font-mono font-black text-[var(--text-main)] leading-none">
               {isUS
                 ? <span><span className="opacity-50 text-[9px]">$</span>{tx.unitPrice.toFixed(2)} <span className="text-[8px] text-blue-400 font-bold">USD</span></span>
                 : <span><span className="opacity-50 text-[9px]">$</span>{tx.unitPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
               }
             </span>
+          {((tx.fee || 0) + (tx.tax || 0) > 0) && (
+            <span className="text-[10px] md:text-xs font-mono font-bold text-[var(--text-main)] leading-snug whitespace-nowrap">
+              <span className="text-[var(--text-dim)] mr-1">額外費用:</span>
+              <span className="opacity-50 text-[10px]">$</span>
+              {((tx.fee || 0) + (tx.tax || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {isUS && <span className="ml-1">USD</span>}
+            </span>
+          )}
           </div>
           {/* 備註 */}
           {tx.notes && (
             <div className="flex items-center gap-1 mt-0.5">
-              <StickyNote size={9} className="text-[var(--accent)] shrink-0" />
-              <span className="text-[9px] text-[var(--text-dim)] truncate font-medium">{tx.notes}</span>
+              <StickyNote size={12} className="text-[var(--accent)] shrink-0" />
+              <span className="text-xs md:text-[13px] text-[var(--text-dim)] truncate font-medium">{tx.notes}</span>
             </div>
           )}
         </div>
@@ -125,14 +142,15 @@ export const TransactionRow: React.FC<TransactionRowProps> = ({
           <span className="text-[8px] text-[var(--text-dim)] uppercase tracking-widest font-black opacity-50 leading-none mb-0.5">
             {isUS ? '交易金額' : '交易總額'}
           </span>
-          <p className={cn("text-sm font-mono font-black leading-none", dirColor)}>
+          <p className={cn("text-sm md:text-base font-mono font-black leading-none", missingTwdAmount ? 'text-[var(--text-dim)] opacity-60' : isCashOutReceipt ? 'text-[var(--danger)]' : dirColor)} title={missingTwdAmount ? '尚未填寫實際台幣金額' : undefined}>
+            {isCashOutReceipt && '−'}
             {isUS
               ? <span><span className="opacity-40 text-[10px]">$</span>{Math.abs(tx.totalAmount).toFixed(2)}<span className="text-[8px] opacity-40 ml-0.5">USD</span></span>
               : <span><span className="opacity-40 text-[10px]">$</span>{Math.abs(tx.totalAmount).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             }
           </p>
           {isUS && tx.twdAmount != null && (
-            <p className="text-[11px] font-mono font-black text-blue-300 leading-none mt-0.5">
+            <p className="text-xs md:text-[13px] font-mono font-black text-blue-300 leading-none mt-0.5">
               = NT${tx.twdAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}
             </p>
           )}

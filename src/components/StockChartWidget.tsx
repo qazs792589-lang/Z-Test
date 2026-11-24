@@ -1,3 +1,8 @@
+import { getDividendNetAmounts } from '../lib/txUtils';
+import { compareTransactions, ensureTransactionSequence } from '../lib/transactionOrder';
+import { addShares, getSaleAllocation } from '../lib/shareMath';
+import { getEvenDateTicks } from '../lib/chartDisplay';
+import { ChartTransactionLabel } from './ChartTransactionLabel';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   ResponsiveContainer,
@@ -11,10 +16,29 @@ import {
   Legend
 } from 'recharts';
 import { Transaction, WeeklyPrice } from '../types';
-import { cn } from '../lib/utils';
+
+const TRADE_MARKERS = [
+  { direction: 'BUY', label: '買入', color: '#22c55e' },
+  { direction: 'SELL', label: '賣出', color: '#ef4444' },
+  { direction: 'DIVIDEND', label: '配息', color: '#facc15' },
+] as const;
+
+const TransactionPoint: React.FC<any> = ({ cx, cy, payload }) => {
+  if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null;
+  const markers = TRADE_MARKERS.filter(marker => payload?.txsToday?.some((tx: Transaction) => tx.direction === marker.direction));
+  return <g>{markers.map((marker, index) => (
+    <circle key={marker.direction} cx={cx + (index - (markers.length - 1) / 2) * 8} cy={cy}
+      r={markers.length > 1 ? 3.5 : 4} fill={marker.color} stroke="var(--bg-primary)" strokeWidth={1}
+      role="img" aria-label={`${marker.label}交易點`} />
+  ))}</g>;
+};
 
 export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketData }: { ticker: string, transactions: Transaction[], weeklyPrices: WeeklyPrice[], marketData: any }) => {
+  const [dateAxisWidth, setDateAxisWidth] = useState(360);
+
   const chartData: any[] = [];
+  const isUsStock = transactions.some(tx => tx.currency === 'USD');
+  const valueMultiplier = isUsStock ? 31 : 1;
 
   const combinedData = useMemo(() => {
     // 1. Collect all unique dates from both weekly prices and transactions
@@ -55,7 +79,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
     if (!dataToUse.length) return [];
 
     // Sort transactions oldest to newest
-    const sortedTxs = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedTxs = [...ensureTransactionSequence(transactions)].sort(compareTransactions);
     if (sortedTxs.length === 0) return dataToUse;
 
     let currentShares = 0;
@@ -73,15 +97,17 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
       // Apply all transactions that happened on or before this day
       while (txIndex < sortedTxs.length && sortedTxs[txIndex].date <= pointDateStr) {
         const tx = sortedTxs[txIndex];
+        const transactionAmount = tx.currency === 'USD' ? (tx.twdAmount || Math.abs(tx.totalAmount) * 31) : Math.abs(tx.totalAmount);
         if (tx.direction === 'BUY') {
-          currentShares += tx.quantity;
-          totalInvested += tx.totalAmount;
+          currentShares = addShares(currentShares, tx.quantity);
+          totalInvested += transactionAmount;
         } else if (tx.direction === 'SELL') {
+          const sale = getSaleAllocation(currentShares, tx.quantity);
           const avgCost = currentShares > 0 ? totalInvested / currentShares : 0;
-          currentShares -= tx.quantity;
-          totalInvested -= (avgCost * tx.quantity);
+          currentShares = sale.remainingShares;
+          totalInvested = sale.isFullSale ? 0 : totalInvested - (avgCost * sale.quantity);
         } else if (tx.direction === 'DIVIDEND') {
-          totalInvested -= Math.abs(tx.totalAmount);
+          totalInvested -= getDividendNetAmounts(tx).twd;
         }
         if (tx.date === pointDateStr) hasTxToday = true;
         txIndex++;
@@ -95,9 +121,9 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
       return {
         ...point,
         shares: currentShares,
-        positionValue: Number((currentShares * point.price).toFixed(2)),
+        positionValue: Number((currentShares * point.price * valueMultiplier).toFixed(2)),
         totalCost: Number(totalInvested.toFixed(2)),
-        isTxPoint: hasTxToday ? (currentShares > 0 ? Number((currentShares * point.price).toFixed(2)) : 0) : null,
+        isTxPoint: hasTxToday ? (currentShares > 0 ? Number((currentShares * point.price * valueMultiplier).toFixed(2)) : 0) : null,
         txsToday: txsToday.length > 0 ? txsToday : null
       };
     });
@@ -108,7 +134,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
     const startTimestamp = firstTxDateObj.getTime() - (7 * 24 * 60 * 60 * 1000); // 1 week before first tx
     return dataWithHoldings.filter(d => d.timestamp >= startTimestamp);
 
-  }, [chartData, transactions, weeklyPrices]);
+  }, [chartData, transactions, weeklyPrices, isUsStock, valueMultiplier]);
 
   const validValues = combinedData.flatMap(d => [d.positionValue, d.totalCost]).filter(v => v !== null) as number[];
   const minVal = validValues.length > 0 ? Math.min(...validValues) : 0;
@@ -117,6 +143,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
 
   return (
     <div className="h-full w-full flex flex-col bg-[var(--bg-primary)]">
+      {isUsStock && <p className="px-3 pt-2 text-[10px] text-[var(--text-dim)]">NT$；市值採固定匯率31，成本採實填台幣（未填則估算）</p>}
       <div className="flex-1 min-h-0 relative px-0 py-4">
         {combinedData.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-dim)] text-center px-4 leading-relaxed">
@@ -126,16 +153,14 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
             </span>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" onResize={(width) => setDateAxisWidth(width)}>
             <ComposedChart data={combinedData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis
+              <XAxis ticks={getEvenDateTicks(combinedData.map(point => point.date), dateAxisWidth)} interval={0} minTickGap={0} padding={{ left: 12, right: 12 }}
                 dataKey="date"
                 stroke="var(--text-dim)"
                 fontSize={10}
                 tickMargin={5}
-                interval="preserveStartEnd"
-                minTickGap={20}
                 tickFormatter={(val) => {
                   if (typeof val !== 'string') return val;
                   const parts = val.split('-');
@@ -146,7 +171,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
                 domain={[Math.max(0, minVal - buffer), maxVal + buffer]}
                 stroke="var(--text-dim)"
                 fontSize={10}
-                tickFormatter={(val) => `$${val.toFixed(0)}`}
+                tickFormatter={(val) => `${isUsStock ? 'NT$' : '$'}${val.toFixed(0)}`}
                 orientation="right"
                 tickMargin={5}
               />
@@ -162,13 +187,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
                         {dataPoint.txsToday && (
                           <div className="mb-2 space-y-1">
                             {dataPoint.txsToday.map((tx: any, idx: number) => (
-                              <div key={idx} className="flex items-center gap-2 text-[9px]">
-                                <span className={cn("px-1 rounded font-black", tx.direction === 'BUY' ? "bg-[var(--danger)] text-white" : "bg-[var(--success)] text-white")}>
-                                  {tx.direction === 'BUY' ? '買' : '賣'}
-                                  {tx.quantity}
-                                </span>
-                                <span className="text-[var(--text-main)]">${tx.unitPrice}</span>
-                              </div>
+                              <ChartTransactionLabel key={idx} tx={tx} />
                             ))}
                           </div>
                         )}
@@ -184,7 +203,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
                                   {entry.dataKey === 'positionValue' ? '市值' : entry.dataKey === 'totalCost' ? '成本' : entry.name}
                                 </span>
                               </div>
-                              <span className="font-bold text-[var(--text-main)] whitespace-nowrap">${Number(entry.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                              <span className="font-bold text-[var(--text-main)] whitespace-nowrap">{isUsStock ? 'NT$' : '$'}{Number(entry.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                           ))}
                       </div>
@@ -195,7 +214,15 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
                 cursor={{ stroke: 'var(--text-dim)', strokeWidth: 1, strokeDasharray: '3 3', opacity: 0.5 }}
                 position={{ y: 10 }}
               />
-              <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} formatter={(value) => value === 'totalCost' ? '持有成本' : value === 'positionValue' ? '累積市值' : '交易打點'} />
+              <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} content={() => (
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] text-[var(--text-dim)]">
+                  <span style={{ color: 'var(--accent)' }}>━ 累積市值</span>
+                  <span style={{ color: 'var(--danger)' }}>━ 持有成本</span>
+                  {TRADE_MARKERS.map(marker => <span key={marker.direction} className="flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: marker.color }} />{marker.label}
+                  </span>)}
+                </div>
+              )} />
               <Line
                 type="monotone"
                 dataKey="totalCost"
@@ -218,7 +245,7 @@ export const StockChartWidget = ({ ticker, transactions, weeklyPrices, marketDat
                 isAnimationActive={false}
                 connectNulls={true}
               />
-              <Scatter dataKey="isTxPoint" name="交易打點" fill="var(--success)" />
+              <Scatter dataKey="isTxPoint" name="交易打點" shape={<TransactionPoint />} activeShape={<TransactionPoint />} legendType="none" />
             </ComposedChart>
           </ResponsiveContainer>
         )}

@@ -167,4 +167,67 @@
 .hardware-accel {
   will-change: transform, opacity;
   transform: translateZ(0);
-}
+}
+/* Inventory notification follows the theme supplied by App. */
+.inventory-notice { box-shadow: 0 12px 40px color-mix(in srgb, var(--border) 35%, transparent); }
+.inventory-notice::backdrop { background: rgb(15 23 42 / 28%); }
+.inventory-notice[data-theme="gold"]::backdrop { background: rgb(70 57 26 / 24%); }
+.inventory-notice[data-theme="cyan"]::backdrop { background: rgb(15 54 62 / 24%); }
+.inventory-notice[data-theme="light"]::backdrop { background: rgb(148 163 184 / 18%); }
+.inventory-notice[data-theme="zen"]::backdrop { background: rgb(190 172 141 / 18%); }
+
+/* The four holding metrics share typography in TWD and USD. */
+.holding-metric {
+  display: grid;
+  grid-template-rows: 1.25rem auto;
+  align-content: start;
+  row-gap: 0.5rem;
+  min-width: 0;
+}
+.holding-metric-label {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
+  min-width: 0;
+}
+.holding-metric-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 768px) {
+  .holding-metric-value { font-size: 1.875rem; }
+}
+@media (min-width: 1024px) {
+  .holding-metric-value { font-size: 2.25rem; }
+}
+
+/* Currency changes update text, without changing the header's line boxes. */
+.holding-hero-summary {
+  display: grid;
+  flex: 0 0 60%;
+  min-width: 0;
+  row-gap: 0.25rem;
+}
+.holding-hero-value {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  margin: 0;
+  height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.holding-hero-unit { line-height: 1; }
+.holding-hero-note,
+.holding-hero-profit {
+  margin: 0;
+  height: 1.5em;
+  line-height: 1.5;
+  white-space: nowrap;
+}

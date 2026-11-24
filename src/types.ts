@@ -3,6 +3,7 @@ export type TransactionDirection = 'BUY' | 'SELL' | 'DIVIDEND';
 
 export interface Transaction {
   id: string;
+  sequence?: number; // 同一股票、同日的成交先後；數字較小者較早
   date: string;
   ticker: string;
   name: string;
@@ -37,6 +38,7 @@ export interface Holding {
   avgCost: number;
   totalInvested: number;
   realizedPL: number;
+  hasEstimatedTwdCost?: boolean;
 }
 
 export interface RealizedProfit {
