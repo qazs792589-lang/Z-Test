@@ -728,6 +728,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   <p className="hidden md:block text-[10px] text-[var(--text-dim)] font-bold opacity-60 ml-9">
                     Benchmark: {isUsSector ? 'US Indices (美股大盤指數)' : 'TAIEX (台股大盤指數)'}
                   </p>
+                  {isUsSector && chartData[0]?.comparisonStartDate && (
+                    <p className="text-[10px] text-[var(--text-dim)] font-bold ml-9">
+                      基準日：{chartData[0].comparisonStartDate}（首筆美股買入）
+                    </p>
+                  )}
+
                 </div>
                 
                 <div className="flex bg-[var(--bg-primary)] p-1 rounded-xl border border-[var(--border)] shrink-0 scale-90 md:scale-100 origin-right">

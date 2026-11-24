@@ -1,3 +1,4 @@
+import { rebaseUsPerformance, mergeBenchmarkHistory } from './lib/performanceBaseline';
 import { ExtraFeeSummary } from './components/ExtraFeeSummary';
 import { inclusiveUnrealizedRoi } from './lib/chartDisplay';
 import { usesEstimatedTwdAmount } from './lib/usDisplay';
@@ -169,22 +170,14 @@ export default function App() {
     return { tMap, nMap };
   }, [transactions]);
 
-  // 啟動時自動從 /benchmark_history.json 載入美股指數歷史週價（git 管理，不被 auto-backup 覆蓋）
+  // Static history only fills missing index dates; preserve imported daily prices.
   useEffect(() => {
-    fetch('/benchmark_history.json')
-      .then(r => r.json())
+    fetch('./benchmark_history.json')
+      .then(r => { if (!r.ok) throw new Error('Benchmark history unavailable'); return r.json(); })
       .then((benchData: Array<{ date: string; ticker: string; price: number }>) => {
-        setWeeklyPrices(prev => {
-          // 移除舊的美股指數資料，以 json 檔案為主
-          const BENCH_TICKERS = ['^GSPC', '^IXIC', '^DJI'];
-          const filtered = prev.filter(p => !BENCH_TICKERS.includes(p.ticker));
-          const merged = [...filtered, ...benchData].sort((a, b) =>
-            a.date.localeCompare(b.date) || a.ticker.localeCompare(b.ticker)
-          );
-          return merged;
-        });
+        if (Array.isArray(benchData)) setWeeklyPrices(prev => mergeBenchmarkHistory(prev, benchData));
       })
-      .catch(() => {/* 靜默失敗，不影響其他功能 */});
+      .catch(() => {/* Keep the user's existing history. */});
   }, []);
 
   // Persistence: Centralized Storage Handler
@@ -784,8 +777,13 @@ export default function App() {
       };
     });
 
-    // 3. Filter raw chartData to start from 2026
-    const filteredBaseData = rawChartData.filter(d => d.name >= '2026-01-01');
+    const firstUsBuyDate = isUs
+      ? targetTransactions.filter(t => t.direction === 'BUY' && t.currency === 'USD')
+        .map(t => t.date).sort()[0]
+      : undefined;
+    const displayStart = firstUsBuyDate && firstUsBuyDate < '2026-01-01'
+      ? firstUsBuyDate : '2026-01-01';
+    const filteredBaseData = rawChartData.filter(d => d.name >= displayStart);
     if (filteredBaseData.length === 0) return [];
 
     const firstDate = filteredBaseData[0].name;
@@ -836,7 +834,7 @@ export default function App() {
 
     const baseValue = filteredBaseData[0]?.value || 0;
 
-    return filteredBaseData.map((d, idx) => {
+    const performanceData = filteredBaseData.map((d, idx) => {
       const currentTxs = targetTransactions.filter(t => t.date === d.name);
       let cashFlow = 0;
       currentTxs.forEach(t => {
@@ -886,6 +884,7 @@ export default function App() {
         dowPrice: curDow
       };
     });
+    return isUs ? rebaseUsPerformance(performanceData, firstUsBuyDate) : performanceData;
   }, [weeklyPrices]);
 
   const finalTwChartData = useMemo(() => {
