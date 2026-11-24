@@ -34,12 +34,13 @@ export const rebaseUsPerformance = (points: PerformancePoint[], firstBuyDate?: s
 
 type PricePoint = { date: string; ticker: string; price: number };
 
-/** Static benchmark files fill gaps, without replacing imported daily observations. */
+/** Default series are only used when an index is absent; imported history is authoritative. */
 export const mergeBenchmarkHistory = (existing: PricePoint[], incoming: PricePoint[]) => {
   const allowed = new Set(['^GSPC', '^IXIC', '^DJI']);
+  const existingTickers = new Set(existing.map(point => point.ticker));
   const keys = new Set(existing.map(point => `${point.ticker}|${point.date}`));
   const additions = incoming.filter(point => {
-    if (!allowed.has(point.ticker) || !/^\d{4}-\d{2}-\d{2}$/.test(point.date)
+    if (existingTickers.has(point.ticker) || !allowed.has(point.ticker) || !/^\d{4}-\d{2}-\d{2}$/.test(point.date)
       || !Number.isFinite(point.price) || point.price <= 0) return false;
     const key = `${point.ticker}|${point.date}`;
     if (keys.has(key)) return false;

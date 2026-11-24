@@ -170,7 +170,7 @@ export default function App() {
     return { tMap, nMap };
   }, [transactions]);
 
-  // Static history only fills missing index dates; preserve imported daily prices.
+  // Default index series are fallback only; preserve imported observations.
   useEffect(() => {
     fetch('./benchmark_history.json')
       .then(r => { if (!r.ok) throw new Error('Benchmark history unavailable'); return r.json(); })
